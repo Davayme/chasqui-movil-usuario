@@ -1,7 +1,8 @@
-
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 
 interface HeaderProps {
@@ -9,14 +10,21 @@ interface HeaderProps {
   showBackButton?: boolean;
   onBackPress?: () => void;
   rightComponent?: React.ReactNode;
+  transparent?: boolean;
+  textColor?: string;
+  backgroundColor?: string;
 }
 
 export default function Header({ 
   title, 
   showBackButton = false, 
   onBackPress, 
-  rightComponent 
+  rightComponent,
+  transparent = false,
+  textColor = '#fff',
+  backgroundColor = Colors.primary
 }: HeaderProps) {
+  const insets = useSafeAreaInsets();
   
   const handleBackPress = () => {
     if (onBackPress) {
@@ -27,52 +35,77 @@ export default function Header({
   };
 
   return (
-    <View style={styles.header}>
-      <View style={styles.leftSection}>
-        {showBackButton && (
+    <View 
+      style={[
+        styles.container, 
+        { 
+          paddingTop: insets.top,
+          backgroundColor: transparent ? 'transparent' : backgroundColor
+        }
+      ]}
+    >
+      <View style={styles.content}>
+        {showBackButton ? (
           <TouchableOpacity 
-            style={styles.backButton} 
+            style={styles.backButton}
             onPress={handleBackPress}
           >
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+            <Ionicons name="arrow-back" size={24} color={textColor} />
           </TouchableOpacity>
+        ) : (
+          <View style={styles.placeholderLeft} />
         )}
-      </View>
-      
-      <Text style={styles.title} numberOfLines={1}>{title}</Text>
-      
-      <View style={styles.rightSection}>
-        {rightComponent}
+        
+        <Text 
+          style={[
+            styles.title, 
+            { color: textColor }
+          ]} 
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+        
+        {rightComponent ? (
+          <View style={styles.rightContainer}>
+            {rightComponent}
+          </View>
+        ) : (
+          <View style={styles.placeholderRight} />
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
+  container: {
+    width: '100%',
+  },
+  content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    height: 56,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: Colors.background,
-  },
-  leftSection: {
-    width: 40,
-    alignItems: 'flex-start',
   },
   backButton: {
-    padding: 4,
+    padding: 8,
   },
   title: {
-    flex: 1,
     fontSize: 18,
-    fontWeight: '600',
-    color: Colors.textPrimary,
+    fontWeight: 'bold',
     textAlign: 'center',
+    flex: 1,
   },
-  rightSection: {
+  placeholderLeft: {
     width: 40,
+  },
+  placeholderRight: {
+    width: 40,
+  },
+  rightContainer: {
+    minWidth: 40,
     alignItems: 'flex-end',
   },
 });

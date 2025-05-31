@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Header from '../../common/components/Header';
 import { showToast } from '../../common/components/Toast';
 import { Colors } from '../../common/constants/colors';
 import { useAuth } from '../../common/context/AuthContext';
@@ -35,10 +36,19 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       
-      <View style={styles.header}>
+      <Header 
+        title="Chasqui-Go"
+        rightComponent={
+          <TouchableOpacity style={styles.notificationButton}>
+            <Ionicons name="notifications-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        }
+      />
+      
+      <View style={styles.welcomeContainer}>
         <Text style={styles.welcomeText}>Hola, {user?.firstName || 'Usuario'}</Text>
         <Text style={styles.subtitle}>¿A dónde viajas hoy?</Text>
       </View>
@@ -80,7 +90,14 @@ export default function HomeScreen() {
             />
           </View>
           
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+          <TouchableOpacity 
+            style={[
+              styles.searchButton,
+              (!origin || !destination || !date) ? styles.searchButtonDisabled : null
+            ]} 
+            onPress={handleSearch}
+            disabled={!origin || !destination || !date}
+          >
             <Text style={styles.searchButtonText}>Buscar Viajes</Text>
           </TouchableOpacity>
         </View>
@@ -149,10 +166,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
+  notificationButton: {
+    padding: 8,
+  },
+  welcomeContainer: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingBottom: 20,
   },
   welcomeText: {
     fontSize: 20,
@@ -211,6 +231,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 10,
+  },
+  searchButtonDisabled: {
+    backgroundColor: Colors.gray400,
   },
   searchButtonText: {
     color: '#fff',

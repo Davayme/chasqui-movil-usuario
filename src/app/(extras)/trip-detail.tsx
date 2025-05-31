@@ -1,9 +1,10 @@
-/* import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Header from '../../common/components/Header';
 import { Colors } from '../../common/constants/colors';
 
 // Datos de ejemplo para los detalles del viaje
@@ -61,17 +62,11 @@ export default function TripDetailScreen() {
 
   if (!trip) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={22} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Detalle de Viaje</Text>
-          <View style={styles.placeholder} />
-        </View>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <Header 
+          title="Detalle de Viaje"
+          showBackButton
+        />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>No se encontró información del viaje</Text>
         </View>
@@ -80,19 +75,13 @@ export default function TripDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Detalle de Viaje</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <Header 
+        title="Detalle de Viaje"
+        showBackButton
+      />
       
       <ScrollView style={styles.content}>
         <View style={styles.companyCard}>
@@ -206,7 +195,7 @@ export default function TripDetailScreen() {
 }
 
 // Función auxiliar para obtener el icono según el tipo de amenidad
-function getAmenityIcon(amenity: string): string {
+function getAmenityIcon(amenity: string): any {
   switch (amenity) {
     case 'Aire acondicionado':
       return 'snow-outline';
@@ -227,25 +216,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: Colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  placeholder: {
-    width: 40,
   },
   content: {
     flex: 1,
@@ -471,4 +441,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-});  */
+});

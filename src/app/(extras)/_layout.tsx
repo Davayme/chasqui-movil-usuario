@@ -11,9 +11,9 @@ export default function ExtrasLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="search-results" options={{ headerShown: false }} />
-      <Stack.Screen name="trip-detail" options={{ headerShown: false }} />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="search-results" />
+      <Stack.Screen name="trip-detail" />
      {/*  <Stack.Screen name="select-seats" options={{ headerShown: false }} />
       <Stack.Screen name="payment" options={{ headerShown: false }} /> */}
     </Stack>

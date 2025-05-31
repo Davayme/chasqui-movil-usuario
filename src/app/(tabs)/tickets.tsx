@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Header from '../../common/components/Header';
 import { Colors } from '../../common/constants/colors';
 import { useAuth } from '../../common/context/AuthContext';
 
@@ -139,12 +140,10 @@ export default function TicketsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mis Boletos</Text>
-      </View>
+      <Header title="Mis Boletos" />
       
       <View style={styles.filterContainer}>
         <TouchableOpacity 

@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Header from '../../common/components/Header';
 import { Colors } from '../../common/constants/colors';
 import { useAuth } from '../../common/context/AuthContext';
 
@@ -14,12 +15,10 @@ export default function ProfileScreen() {
   const firstInitial = user?.firstName.charAt(0) || 'U';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
       
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mi Perfil</Text>
-      </View>
+      <Header title="Mi Perfil" />
       
       <ScrollView style={styles.content}>
         <View style={styles.profileHeader}>
@@ -113,18 +112,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
   },
   content: {
     flex: 1,

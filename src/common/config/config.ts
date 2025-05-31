@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
   },
   USER: {
     PROFILE: '/users/profile',
+    REGISTER: '/users/client',
   },
 };
 
