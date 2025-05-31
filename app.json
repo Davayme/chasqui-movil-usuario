@@ -42,7 +42,8 @@
       "router": {
         "origin": false,
         "initialRouteName": "./src/app"
-      }
+      },
+      "apiUrl": "https://chasquigo-backend.onrender.com"
     }
   }
 }
