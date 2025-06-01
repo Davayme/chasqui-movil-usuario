@@ -1,9 +1,15 @@
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View, Platform } from 'react-native';
+import {
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import { showToast } from '../../../common/components/Toast';
 import { Colors } from '../../../common/constants/colors';
 import { useAuth } from '../../../common/context/AuthContext';
@@ -32,10 +38,12 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <StatusBar style="light" />
       
-      {/* Cabecera personalizada integrada */}
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Chasqui-Go</Text>
         <View style={styles.welcomeContainer}>
@@ -48,15 +56,18 @@ export default function SearchScreen() {
         style={styles.content}
         contentContainerStyle={[
           styles.contentContainer,
-          { paddingBottom: 80 + insets.bottom } // Aseguramos espacio para la navegación
+          { paddingBottom: 80 + insets.bottom }
         ]}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <FormSearchBus onSearch={handleSearch} />
+        <View style={styles.formContainer}>
+          <FormSearchBus onSearch={handleSearch} />
+        </View>
         <ServiceInfo />
         <TravelTips />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -67,10 +78,10 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     backgroundColor: Colors.primary,
-    paddingTop: Platform.OS === 'ios' ? 50 : 40, // Espacio para la barra de estado
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingHorizontal: 20,
     paddingBottom: 20,
-
+    zIndex: 0,
   },
   headerTitle: {
     fontSize: 22,
@@ -96,8 +107,12 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    zIndex: 1,
   },
   contentContainer: {
     paddingTop: 20,
+  },
+  formContainer: {
+    zIndex: 100,
   }
 });
