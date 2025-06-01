@@ -7,7 +7,6 @@ import { useSplashScreen } from '../common/hooks/useSplashScreen';
 
 function RootLayoutContent() {
   useSplashScreen();
-  
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>

@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../common/constants/colors';
 import { useAuth } from '../../common/context/AuthContext';
 
 export default function TabsLayout() {
   const { isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
 
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/login" />;
@@ -20,13 +22,10 @@ export default function TabsLayout() {
         tabBarStyle: {
           borderTopWidth: 1,
           borderTopColor: Colors.gray200,
-          height: Platform.OS === 'android' ? 65 : 85,
+          height: Platform.OS === 'android' ? 65 + insets.bottom : 85,
           paddingTop: 10,
-          paddingBottom: Platform.OS === 'android' ? 15 : 30,
-          // This ensures tab bar doesn't cover system navigation on Android
-          ...(Platform.OS === 'android' && {
-            paddingHorizontal: 5,
-          }),
+          paddingBottom: Platform.OS === 'android' ? 15 + insets.bottom : 30,
+          backgroundColor: '#fff',
         },
         tabBarLabelStyle: {
           fontSize: 12,
