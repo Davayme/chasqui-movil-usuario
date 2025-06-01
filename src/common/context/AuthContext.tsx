@@ -45,28 +45,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storedUser = await SecureStore.getItemAsync(USER_KEY);
         
         if (storedToken) {
-          // Validar el token antes de usarlo
-          const isValid = await authService.validateToken(storedToken);
+          // Temporalmente asumimos que cualquier token almacenado es válido
+          // ya que aún no tenemos el endpoint de validación en el backend
+          setToken(storedToken);
+          setIsAuthenticated(true);
           
-          if (isValid) {
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+          
+          /* CÓDIGO COMENTADO - IMPLEMENTAR CUANDO EL ENDPOINT ESTÉ DISPONIBLE
+          try {
+            // Validar el token antes de usarlo
+            const isValid = await authService.validateToken(storedToken);
+            
+            if (isValid) {
+              setToken(storedToken);
+              setIsAuthenticated(true);
+              
+              if (storedUser) {
+                setUser(JSON.parse(storedUser));
+              }
+            } else {
+              // Si el token no es válido, eliminarlo
+              await SecureStore.deleteItemAsync(TOKEN_KEY);
+              await SecureStore.deleteItemAsync(USER_KEY);
+              console.log('Token no válido, se ha eliminado');
+            }
+          } catch (validationError) {
+            // Si hay un error al validar el token, mantenemos la sesión por defecto
+            console.warn('Error al validar token, manteniendo sesión:', validationError);
             setToken(storedToken);
             setIsAuthenticated(true);
             
             if (storedUser) {
               setUser(JSON.parse(storedUser));
             }
-          } else {
-            // Si el token no es válido, eliminarlo
-            await SecureStore.deleteItemAsync(TOKEN_KEY);
-            await SecureStore.deleteItemAsync(USER_KEY);
           }
+          */
         }
       } catch (error) {
         console.error('Error al cargar token:', error);
+        // Solo mostrar el toast si es un error crítico que impide el funcionamiento
         Toast.show({
           type: 'error',
           text1: 'Error',
-          text2: 'No se pudo cargar la sesión anterior'
+          text2: 'No se pudo acceder al almacenamiento seguro'
         });
       } finally {
         setIsLoading(false);
