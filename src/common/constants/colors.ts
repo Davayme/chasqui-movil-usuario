@@ -1,11 +1,29 @@
 export const Colors = {
-  background: '#1C1C1C',      // Midnight Black
-  primary: '#00D1FF',         // Electric Blue
-  secondary: '#6A00FF',       // Deep Purple
-  accent: '#FFA200',          // Sunset Orange
-  danger: '#FF2E63',          // Crimson Red
-  highlight: '#FF3CAC',       // Hot Pink
-  special: '#C800FF',         // Violet Neon
-  textPrimary: '#FFFFFF',     // Blanco puro
-  textSecondary: '#B0B3C5',   // Gris claro
+  // Primary UI colors
+  primary: '#1d273b', // gray-800
+  secondary: '#49566c', // gray-600
+  accent: '#3498db', // A nice blue for accents
+  
+  // Text colors
+  textPrimary: '#1d273b', // gray-800
+  textSecondary: '#49566c', // gray-600
+  textLight: '#9ba9be', // gray-400
+  
+  // Background colors
+  backgroundPrimary: '#ffffff',
+  backgroundSecondary: '#f8fafc', // gray-50
+  backgroundTertiary: '#e2e8f0', // gray-200
+  
+  // Status colors
+  success: '#2ecc71',
+  danger: '#e74c3c',
+  warning: '#f39c12',
+  info: '#3498db',
+  
+  // Gray scale
+  gray50: '#f8fafc',
+  gray200: '#e2e8f0',
+  gray400: '#9ba9be',
+  gray600: '#49566c',
+  gray800: '#1d273b',
 };
