@@ -16,7 +16,8 @@
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.davayme.chasquimovilusuario"
     },
     "web": {
       "bundler": "metro",
@@ -42,7 +43,12 @@
       "router": {
         "origin": false,
         "initialRouteName": "./src/app"
+      },
+      "apiUrl": "https://chasquigo-backend.onrender.com",
+      "eas": {
+        "projectId": "b1554167-ea68-44f2-bdbf-30e35bb9b069"
       }
-    }
+    },
+    "owner": "davayme"
   }
 }
