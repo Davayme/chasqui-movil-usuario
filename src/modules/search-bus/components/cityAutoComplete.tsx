@@ -209,12 +209,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
-    elevation: 99, // Muy elevado para Android
+    elevation: 99,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    zIndex: 9999, // Extremadamente alto para asegurar que está por encima de todo
+    zIndex: 9999,
     maxHeight: Platform.OS === 'ios' ? 160 : 180,
     borderWidth: 1,
     borderColor: Colors.primary,

@@ -113,7 +113,7 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
             <Calendar
               current={selectedDate || new Date().toISOString().split('T')[0]}
               minDate={new Date().toISOString().split('T')[0]}
-              maxDate={new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+              maxDate={new Date(2025, 11, 31).toISOString().split('T')[0]} // Permitir fechas hasta finales de 2025
               onDayPress={handleDateSelect}
               markedDates={{
                 [selectedDate]: { selected: true, selectedColor: Colors.primary }
