@@ -92,16 +92,16 @@ export default function SeatSelectionScreen() {
     let seatIconColor = Colors.gray400;
     
     if (isOccupied) {
-      seatStyle.push(styles.occupiedSeat);
+      seatStyle = [...seatStyle, styles.occupiedSeat as any];
       seatIconName = 'close-circle';
       seatIconColor = Colors.danger;
     } else if (isSelected) {
-      seatStyle.push(styles.selectedSeat);
+      seatStyle = [...seatStyle, styles.selectedSeat as any];
       seatIconName = 'checkmark-circle';
       seatIconColor = Colors.primary;
     } else {
       if (seat.type === 'VIP') {
-        seatStyle.push(styles.vipSeat);
+        seatStyle = [...seatStyle, styles.vipSeat as any];
         seatIconColor = Colors.warning;
       } else if (seat.type === 'discapacitado') {
         seatIconName = 'accessibility-outline';
