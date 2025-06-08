@@ -66,11 +66,8 @@ export default function PurchaseConfirmationScreen() {
     try {
       setIsProcessingPayment(true);
       
-      // Convertir el monto a centavos para Stripe
-      const amountInCents = Math.round(ticketData.pricing.grandTotal * 100);
-      
-      // Procesar el pago con Stripe
-      const success = await processPayment(amountInCents);
+      // Pasar el monto directamente (ya no necesitamos convertirlo a centavos)
+      const success = await processPayment(ticketData.pricing.grandTotal);
       
       if (success) {
         // Navegar a la pantalla de boletos

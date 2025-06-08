@@ -17,6 +17,9 @@ export const API_ENDPOINTS = {
     PROFILE: '/users/profile',
     REGISTER: '/users/client',
   },
+  PAYMENTS: {
+    CREATE_PAYMENT_INTENT: '/payments/create-payment-intent',
+  },
 };
 
 
