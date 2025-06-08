@@ -1,5 +1,6 @@
 import Header from '@/src/common/components/Header';
 import { Colors } from '@/src/common/constants/colors';
+import { useStripePayment } from '@/src/common/services/stripeService';
 import { TicketPreview } from '@/src/modules/search-bus/services/interfaces';
 import { generateTicketPreview } from '@/src/modules/search-bus/services/mockData';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +18,11 @@ export default function PurchaseConfirmationScreen() {
   const { tripId, seats } = params;
   
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [ticketData, setTicketData] = useState<TicketPreview | null>(null);
+  
+  // Usar el hook de Stripe para procesar pagos
+  const { processPayment } = useStripePayment();
   
   useEffect(() => {
     const loadTicketData = async () => {
@@ -55,21 +60,28 @@ export default function PurchaseConfirmationScreen() {
     loadTicketData();
   }, [tripId, seats]);
   
-  const handlePayWithStripe = () => {
-    // Aquí iría la integración con Stripe
-    Alert.alert(
-      'Procesando pago',
-      'Redirigiendo a la pasarela de pago...',
-      [
-        {
-          text: 'Simular pago exitoso',
-          onPress: () => {
-            // Navegar a una pantalla de confirmación o de boletos
-            router.push('/(tabs)/tickets');
-          }
-        }
-      ]
-    );
+  const handlePayWithStripe = async () => {
+    if (!ticketData) return;
+    
+    try {
+      setIsProcessingPayment(true);
+      
+      // Convertir el monto a centavos para Stripe
+      const amountInCents = Math.round(ticketData.pricing.grandTotal * 100);
+      
+      // Procesar el pago con Stripe
+      const success = await processPayment(amountInCents);
+      
+      if (success) {
+        // Navegar a la pantalla de boletos
+        router.push('/(tabs)/tickets');
+      }
+    } catch (error) {
+      console.error('Error al procesar el pago:', error);
+      Alert.alert('Error', 'No se pudo procesar el pago');
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
   
   if (isLoading) {
@@ -118,9 +130,16 @@ export default function PurchaseConfirmationScreen() {
         <TouchableOpacity 
           style={styles.payButton}
           onPress={handlePayWithStripe}
+          disabled={isProcessingPayment}
         >
-          <Ionicons name="card-outline" size={22} color="#fff" style={styles.payButtonIcon} />
-          <Text style={styles.payButtonText}>Pagar con Stripe</Text>
+          {isProcessingPayment ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="card-outline" size={22} color="#fff" style={styles.payButtonIcon} />
+              <Text style={styles.payButtonText}>Pagar con Stripe</Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

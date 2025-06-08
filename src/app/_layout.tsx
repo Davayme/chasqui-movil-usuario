@@ -1,10 +1,12 @@
+import { StripeProvider } from "@stripe/stripe-react-native";
 import { Stack } from "expo-router";
 import React from "react";
+import { Platform, StatusBar } from "react-native";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "../common/components/Toast";
 import { AuthProvider } from "../common/context/AuthContext";
 import { useSplashScreen } from "../common/hooks/useSplashScreen";
-import { Platform, StatusBar } from "react-native";
+
 function RootLayoutContent() {
   useSplashScreen();
 
@@ -29,7 +31,13 @@ function RootLayoutContent() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutContent />
+      <StripeProvider
+        publishableKey="pk_test_51OVR6tILXmRhmPFRNFcVDCJAh3GoiYknLIYAJnrXRsQ0SVw9sVxgXFXlO6MfYkHpHs9yB1e4J20TLO9eJYEiYAoH00bYKsW1M8"
+        urlScheme="chasquigo"
+        merchantIdentifier="merchant.com.chasquigo"
+      >
+        <RootLayoutContent />
+      </StripeProvider>
     </AuthProvider>
   );
 }
