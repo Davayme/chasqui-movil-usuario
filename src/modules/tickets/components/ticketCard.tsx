@@ -88,8 +88,8 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, filter }) => {
               style={[styles.actionButton, styles.actionButtonSecondary]}
               onPress={showQRModal}
             >
-              <Ionicons name="share-social-outline" size={20} color={Colors.primary} />
-              <Text style={styles.actionButtonTextSecondary}>Compartir</Text>
+              <Ionicons name="download-outline" size={20} color={Colors.primary} />
+              <Text style={styles.actionButtonTextSecondary}>Guardar</Text>
             </TouchableOpacity>
           )}
         </View>

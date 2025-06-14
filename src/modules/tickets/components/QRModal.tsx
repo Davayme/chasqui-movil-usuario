@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import * as MediaLibrary from 'expo-media-library';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,9 +10,10 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import ViewShot from 'react-native-view-shot';
 import { showToast } from '../../../common/components/Toast';
 import { Colors } from '../../../common/constants/colors';
-import { getMockTicketQR, getTicketQR, saveTicketQR } from '../services/qrService';
+import { getMockTicketQR, getTicketQR } from '../services/qrService';
 
 interface QRModalProps {
   visible: boolean;
@@ -29,6 +31,13 @@ const QRModal: React.FC<QRModalProps> = ({
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const viewShotRef = useRef<ViewShot | null>(null);
+
+  // Extraer información del boleto para mostrar en la imagen
+  const ticketParts = ticketInfo.split('_');
+  const origin = ticketParts[0] || '';
+  const destination = ticketParts[1] || '';
+  const date = ticketParts.slice(2).join(' ').replace(/_/g, ' ') || '';
 
   useEffect(() => {
     if (visible) {
@@ -63,19 +72,39 @@ const QRModal: React.FC<QRModalProps> = ({
   const handleSaveQR = async () => {
     setSaving(true);
     try {
-      const result = await saveTicketQR(ticketId, ticketInfo);
+      // Solicitar permisos para guardar en la galería
+      const { status } = await MediaLibrary.requestPermissionsAsync();
       
-      showToast({
-        type: result.success ? 'success' : 'error',
-        title: result.success ? 'Éxito' : 'Error',
-        message: result.message
-      });
-      
-      if (result.success) {
+      if (status !== 'granted') {
+        showToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Se requieren permisos para guardar en la galería'
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Capturar la vista que contiene el QR y el título
+      if (viewShotRef.current && viewShotRef.current.capture) {
+        const uri = await viewShotRef.current.capture();
+        
+        // Guardar la imagen en la galería
+        await MediaLibrary.saveToLibraryAsync(uri);
+        
+        showToast({
+          type: 'success',
+          title: 'Éxito',
+          message: 'Boleto guardado en la galería'
+        });
+        
         // Cerrar el modal después de guardar exitosamente
         setTimeout(onClose, 1000);
+      } else {
+        throw new Error('No se pudo capturar la imagen');
       }
     } catch (error) {
+      console.error('Error al guardar QR:', error);
       showToast({
         type: 'error',
         title: 'Error',
@@ -102,19 +131,37 @@ const QRModal: React.FC<QRModalProps> = ({
             </TouchableOpacity>
           </View>
           
-          <View style={styles.qrContainer}>
-            {loading ? (
-              <ActivityIndicator size="large" color={Colors.primary} />
-            ) : qrCode ? (
-              <Image
-                source={{ uri: qrCode }}
-                style={styles.qrImage}
-                resizeMode="contain"
-              />
-            ) : (
-              <Text style={styles.errorText}>No se pudo cargar el código QR</Text>
-            )}
-          </View>
+          <ViewShot
+            ref={viewShotRef}
+            options={{ format: 'png', quality: 1 }}
+            style={styles.viewShotContainer}
+          >
+            <View style={styles.qrCaptureContainer}>
+              <View style={styles.qrHeader}>
+                <Text style={styles.qrTitle}>ChasquiGo - Boleto de Viaje</Text>
+                <Text style={styles.qrSubtitle}>{origin} → {destination}</Text>
+                <Text style={styles.qrDate}>{date}</Text>
+              </View>
+              
+              <View style={styles.qrImageContainer}>
+                {loading ? (
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                ) : qrCode ? (
+                  <Image
+                    source={{ uri: qrCode }}
+                    style={styles.qrImage}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <Text style={styles.errorText}>No se pudo cargar el código QR</Text>
+                )}
+              </View>
+              
+              <Text style={styles.qrFooter}>
+                Presente este código al personal de la cooperativa
+              </Text>
+            </View>
+          </ViewShot>
           
           <Text style={styles.infoText}>
             Muestra este código al personal de la cooperativa para abordar
@@ -130,8 +177,8 @@ const QRModal: React.FC<QRModalProps> = ({
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <>
-                  <Ionicons name="share-outline" size={20} color="#fff" />
-                  <Text style={styles.actionButtonText}>Compartir QR</Text>
+                  <Ionicons name="download-outline" size={20} color="#fff" />
+                  <Text style={styles.actionButtonText}>Guardar en Galería</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -170,19 +217,56 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.textPrimary,
   },
-  qrContainer: {
-    width: 250,
-    height: 250,
+  viewShotContainer: {
+    width: 280,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  qrCaptureContainer: {
+    padding: 15,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  qrHeader: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  qrTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.primary,
+    marginBottom: 5,
+  },
+  qrSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 3,
+  },
+  qrDate: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginBottom: 10,
+  },
+  qrImageContainer: {
+    width: 220,
+    height: 220,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
     backgroundColor: '#f9f9f9',
     borderRadius: 8,
     padding: 10,
+    marginBottom: 10,
   },
   qrImage: {
-    width: 230,
-    height: 230,
+    width: 200,
+    height: 200,
+  },
+  qrFooter: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
   errorText: {
     color: Colors.error,
@@ -192,7 +276,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 20,
+    marginVertical: 20,
   },
   actionsContainer: {
     width: '100%',

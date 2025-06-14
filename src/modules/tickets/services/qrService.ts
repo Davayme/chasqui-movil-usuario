@@ -1,12 +1,9 @@
 import { API_ENDPOINTS, API_URL } from '@/src/common/config/config';
 import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-
 
 export interface QRResponse {
   qrCode: string; // Base64 string del QR
 }
-
 
 /**
  * Obtiene el código QR de un boleto en formato base64
@@ -66,60 +63,6 @@ export const getTicketQR = async (ticketId: string): Promise<string> => {
   } catch (error) {
     console.error('Error al obtener QR (todos los métodos fallaron):', error);
     return getMockTicketQR(ticketId);
-  }
-};
-
-/**
- * Guarda un código QR en el dispositivo
- * @param ticketId ID del boleto
- * @param ticketInfo Información adicional para el nombre del archivo
- * @returns Promesa con el resultado de la operación
- */
-export const saveTicketQR = async (ticketId: string, ticketInfo: string): Promise<{ success: boolean; message: string }> => {
-  try {
-    // Intentar obtener el QR real, si falla usar el mock
-    let qrBase64;
-    try {
-      qrBase64 = await getTicketQR(ticketId);
-    } catch (error) {
-      console.log('Error al obtener QR para compartir, usando mock:', error);
-      qrBase64 = getMockTicketQR(ticketId);
-    }
-    
-    // Verificar si el QR es válido
-    if (!qrBase64 || !qrBase64.includes('base64')) {
-      console.log('QR no válido, usando mock');
-      qrBase64 = getMockTicketQR(ticketId);
-    }
-    
-    // Extraer la parte de datos del base64
-    const base64Data = qrBase64.split(',')[1];
-    
-    // Crear un nombre de archivo significativo
-    const fileName = `chasquigo_boleto_${ticketId}_${ticketInfo.replace(/\s+/g, '_')}.png`;
-    const fileUri = FileSystem.documentDirectory + fileName;
-    
-    // Guardar el archivo temporalmente
-    await FileSystem.writeAsStringAsync(fileUri, base64Data, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    
-    // Compartir el archivo en lugar de guardarlo (funciona en Android e iOS)
-    await Sharing.shareAsync(fileUri, {
-      mimeType: 'image/png',
-      dialogTitle: `Boleto ${ticketId}`,
-    });
-    
-    return {
-      success: true,
-      message: 'Boleto compartido correctamente'
-    };
-  } catch (error: any) {
-    console.error('Error al compartir QR:', error);
-    return {
-      success: false,
-      message: `Error al compartir: ${error.message}`
-    };
   }
 };
 
