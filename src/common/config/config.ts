@@ -20,6 +20,9 @@ export const API_ENDPOINTS = {
   PAYMENTS: {
     CREATE_PAYMENT_INTENT: '/payments/create-payment-intent',
   },
+  QR: {
+    GET_QR: '/qr/demo',
+  },
 };
 
 

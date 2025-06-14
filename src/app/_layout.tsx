@@ -2,8 +2,7 @@ import { StripeProvider } from "@stripe/stripe-react-native";
 import { Stack } from "expo-router";
 import React from "react";
 import { Platform, StatusBar } from "react-native";
-import Toast from "react-native-toast-message";
-import { toastConfig } from "../common/components/Toast";
+import { ToastContainer } from "../common/components/Toast";
 import { AuthProvider } from "../common/context/AuthContext";
 import { useSplashScreen } from "../common/hooks/useSplashScreen";
 
@@ -23,7 +22,7 @@ function RootLayoutContent() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(extras)" />
       </Stack>
-      <Toast config={toastConfig} />
+      <ToastContainer />
     </>
   );
 }

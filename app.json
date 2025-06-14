@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "chasqui-movil-usuario",
+    "name": "Chasqui Go",
     "slug": "chasqui-movil-usuario",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -18,7 +18,11 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.davayme.chasquimovilusuario"
+      "package": "com.davayme.chasquimovilusuario",
+      "permissions": [
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",

@@ -1,129 +1,214 @@
-import Toast, {
-  BaseToast,
-  ErrorToast,
-  ToastConfig,
-} from "react-native-toast-message";
-import { Colors } from "../constants/colors";
-import { StyleSheet } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Colors } from '../constants/colors';
 
+type ToastType = 'success' | 'error' | 'warning' | 'info';
 
-const styles = StyleSheet.create({
-  toastContainer: {
-    height: "auto",
-    width: "90%",
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 20,
-    marginVertical: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  toastContentContainer: {
-    paddingHorizontal: 8,
-  },
-  toastTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.textPrimary,
-  },
-  toastMessage: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-
-  successToast: {
-    backgroundColor: "#1DB954", // Fondo verde de Spotify
-    borderLeftColor: "#1ed760",
-  },
-  successToastText1: {
-    color: "#FFFFFF", // Texto blanco para el título
-    fontWeight: "700", // Más negrita para mejor contraste
-    fontSize: 16,
-  },
-  successToastText2: {
-    color: "#FFFFFF", // Texto blanco para el mensaje
-    opacity: 0.9, // Ligeramente transparente para indicar jerarquía
-    fontSize: 14,
-  },
-  errorToast: {
-    backgroundColor: Colors.danger,
-    borderLeftColor: "#ff4b7b",
-  },
-  infoToast: {
-    backgroundColor: Colors.primary,
-    borderLeftColor: "#33d9ff",
-  },
-});
-const baseConfig = {
-  style: styles!.toastContainer,
-  contentContainerStyle: styles.toastContentContainer,
-  text1Style: styles.toastTitle,
-  text2Style: styles.toastMessage,
-};
-
-// Configuración personalizada para diferentes tipos de toast
-export const toastConfig: ToastConfig = {
-  success: (props) => (
-    <BaseToast
-      {...props}
-      {...baseConfig}
-      style={[styles.toastContainer, styles.successToast]}
-      text1Style={styles.successToastText1}
-      text2Style={styles.successToastText2}
-      text1NumberOfLines={1}
-      text2NumberOfLines={2}
-    />
-  ),
-  error: (props) => (
-    <ErrorToast
-      {...props}
-      {...baseConfig}
-      style={[styles.toastContainer, styles.errorToast]}
-      text1NumberOfLines={1}
-      text2NumberOfLines={2}
-    />
-  ),
-  info: (props) => (
-    <BaseToast
-      {...props}
-      {...baseConfig}
-      style={[styles.toastContainer, styles.infoToast]}
-      text1NumberOfLines={1}
-      text2NumberOfLines={2}
-    />
-  ),
-};
-
-// Función helper para mostrar toasts
-type ToastType = "success" | "error" | "info";
-
-interface ShowToastParams {
+interface ToastProps {
+  visible: boolean;
   type: ToastType;
-  title?: string;
+  title: string;
   message: string;
-  position?: "top" | "bottom";
+  onHide: () => void;
+}
+
+// Singleton para gestionar el toast
+class ToastManager {
+  private static instance: ToastManager;
+  private toastRef: React.RefObject<{ show: (params: ToastParams) => void }> | null = null;
+
+  private constructor() {}
+
+  public static getInstance(): ToastManager {
+    if (!ToastManager.instance) {
+      ToastManager.instance = new ToastManager();
+    }
+    return ToastManager.instance;
+  }
+
+  public setToastRef(ref: React.RefObject<{ show: (params: ToastParams) => void }>): void {
+    this.toastRef = ref;
+  }
+
+  public showToast(params: ToastParams): void {
+    if (this.toastRef && this.toastRef.current) {
+      this.toastRef.current.show(params);
+    }
+  }
+}
+
+export const toastManager = ToastManager.getInstance();
+
+export interface ToastParams {
+  type: ToastType;
+  title: string;
+  message: string;
   duration?: number;
 }
 
-export const showToast = ({
-  type,
-  title,
-  message,
-  position = "top",
-  duration = 3000,
-}: ShowToastParams) => {
-  Toast.show({
-    type,
-    text1: title,
-    text2: message,
-    position,
-    visibilityTime: duration,
-  });
+export const showToast = (params: ToastParams): void => {
+  toastManager.showToast(params);
 };
+
+const Toast: React.FC<ToastProps> = ({ visible, type, title, message, onHide }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, fadeAnim]);
+
+  const getIconName = (): string => {
+    switch (type) {
+      case 'success':
+        return 'checkmark-circle';
+      case 'error':
+        return 'alert-circle';
+      case 'warning':
+        return 'warning';
+      case 'info':
+        return 'information-circle';
+      default:
+        return 'information-circle';
+    }
+  };
+
+  const getIconColor = (): string => {
+    switch (type) {
+      case 'success':
+        return '#4CAF50';
+      case 'error':
+        return '#F44336';
+      case 'warning':
+        return '#FF9800';
+      case 'info':
+        return '#2196F3';
+      default:
+        return '#2196F3';
+    }
+  };
+
+  return (
+    <Animated.View
+      style={[
+        styles.container,
+        { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [-20, 0]
+        }) }] }
+      ]}
+    >
+      <View style={styles.iconContainer}>
+        <Ionicons name={getIconName() as any} size={24} color={getIconColor()} />
+      </View>
+      <View style={styles.textContainer}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.message}>{message}</Text>
+      </View>
+    </Animated.View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  iconContainer: {
+    marginRight: 12,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  title: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 4,
+    color: Colors.textPrimary,
+  },
+  message: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+});
+
+export class ToastContainer extends React.Component {
+  state = {
+    visible: false,
+    type: 'info' as ToastType,
+    title: '',
+    message: '',
+  };
+
+  private timeout: NodeJS.Timeout | null = null;
+  
+  componentDidMount() {
+    toastManager.setToastRef({ current: this });
+  }
+
+  componentWillUnmount() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+  }
+
+  show = ({ type, title, message, duration = 3000 }: ToastParams) => {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+
+    this.setState({
+      visible: true,
+      type,
+      title,
+      message,
+    });
+
+    this.timeout = setTimeout(() => {
+      this.hide();
+    }, duration);
+  };
+
+  hide = () => {
+    this.setState({ visible: false });
+  };
+
+  render() {
+    return (
+      <Toast
+        visible={this.state.visible}
+        type={this.state.type}
+        title={this.state.title}
+        message={this.state.message}
+        onHide={this.hide}
+      />
+    );
+  }
+}
+
+export default ToastContainer;
