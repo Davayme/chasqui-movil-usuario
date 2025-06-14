@@ -169,7 +169,6 @@ export default function SeatSelectionScreen() {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <StatusBar style="light" />
-        <Header title="Selección de Asientos" showBackButton />
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>

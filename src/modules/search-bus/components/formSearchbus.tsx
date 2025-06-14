@@ -23,7 +23,9 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
   // Función para formatear la fecha para mostrar
   const formatDisplayDate = (dateString: string) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    // Asegurarnos de que la fecha se maneje en la zona horaria local
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',

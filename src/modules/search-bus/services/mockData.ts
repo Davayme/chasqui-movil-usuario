@@ -514,19 +514,18 @@ export const searchAvailableTrips = (origin: string, destination: string, date: 
       !route.isDeleted
   );
   
-  // Encontrar hojas de ruta para esas rutas y fecha
+  // Si no hay rutas que coincidan, devolver un array vacío
+  if (matchingRoutes.length === 0) {
+    return [];
+  }
+  
+  // Para fines de demostración, usaremos los datos de mockRouteSheets
+  // independientemente de la fecha exacta
   const matchingRouteSheets = mockRouteSheets.filter(
-    sheet => {
-      const sheetDate = new Date(sheet.date);
-      return (
-        matchingRoutes.some(route => route.id === sheet.routeId) &&
-        sheetDate.getDate() === searchDate.getDate() &&
-        sheetDate.getMonth() === searchDate.getMonth() &&
-        sheetDate.getFullYear() === searchDate.getFullYear() &&
-        sheet.status === 'programado' &&
-        !sheet.isDeleted
-      );
-    }
+    sheet => 
+      matchingRoutes.some(route => route.id === sheet.routeId) &&
+      sheet.status === 'programado' &&
+      !sheet.isDeleted
   );
   
   // Obtener detalles completos de cada viaje
@@ -549,12 +548,19 @@ export const searchAvailableTrips = (origin: string, destination: string, date: 
       .filter(stop => stop.routeId === route.id && !stop.isDeleted)
       .sort((a, b) => a.order - b.order);
     
+    // Ajustar la fecha para que coincida con la fecha de búsqueda
+    const adjustedDate = new Date(searchDate);
+    adjustedDate.setHours(
+      route.departureTime.getHours(),
+      route.departureTime.getMinutes()
+    );
+    
     return {
       id: sheet.id,
       routeId: route.id,
       busId: bus.id,
-      date: sheet.date,
-      departureTime: route.departureTime,
+      date: adjustedDate,
+      departureTime: adjustedDate,
       originCity: route.originCity,
       destinationCity: route.destinationCity,
       intermediateStops: intermediateStops.map(stop => stop.city),
