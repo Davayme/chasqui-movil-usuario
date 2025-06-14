@@ -1,15 +1,20 @@
 {
   "expo": {
-    "name": "chasqui-movil-usuario",
+    "name": "Chasqui Go",
     "slug": "chasqui-movil-usuario",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
-    "scheme": "chasquimovilusuario",
+    "scheme": "chasquigo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.davayme.chasquimovilusuario",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "La aplicación necesita acceso a tu galería para guardar los códigos QR de tus boletos.",
+        "NSPhotoLibraryAddUsageDescription": "La aplicación necesita permiso para guardar los códigos QR de tus boletos en tu galería."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +22,11 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.davayme.chasquimovilusuario"
+      "package": "com.davayme.chasquimovilusuario",
+      "permissions": [
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -34,6 +43,21 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "",
+          "enableGooglePay": true
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "La aplicación necesita acceso a tu galería para guardar los códigos QR de tus boletos.",
+          "savePhotosPermission": "La aplicación necesita permiso para guardar los códigos QR de tus boletos en tu galería.",
+          "isAccessMediaLocationEnabled": false
+        }
       ]
     ],
     "experiments": {
@@ -47,7 +71,9 @@
       "apiUrl": "https://chasquigo-backend.onrender.com",
       "eas": {
         "projectId": "b1554167-ea68-44f2-bdbf-30e35bb9b069"
-      }
+      },
+      "stripePublishableKey": "pk_test_51OVR6tILXmRhmPFR0a3rWTTW4SUX1YFLkjaD6XWmeglplW5kcR49Vr6SutZLVF7tUgwtkqv3cup9pGJeDmABtFKW00iNQTABD6",
+      "stripeSecretKey": "sk_test_51OVR6tILXmRhmPFRXetwJXugUYnsAGU1zJqHRDKoQ4sHI2HmaevTrx0YF3pJpagk5rjGToC7fLIk20gzfrlGtbNi00EeE6PjQ9"
     },
     "owner": "davayme"
   }

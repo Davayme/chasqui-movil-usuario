@@ -19,7 +19,7 @@ export const Colors = {
   danger: '#e74c3c',
   warning: '#f39c12',
   info: '#3498db',
-  
+  error: '#e74c3c',
   // Gray scale
   gray50: '#f8fafc',
   gray200: '#e2e8f0',
