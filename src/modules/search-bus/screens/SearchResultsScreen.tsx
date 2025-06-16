@@ -24,6 +24,7 @@ export default function SearchResultsScreen() {
   
   // Cargar los resultados de búsqueda
   useEffect(() => {
+    console.log('SearchResultsScreen mounted');
     const loadTrips = async () => {
       setIsLoading(true);
       try {
@@ -90,10 +91,10 @@ export default function SearchResultsScreen() {
     setFilteredTrips(filtered);
   };
   
-  // Manejar la edición de la búsqueda
-  const handleEditSearch = () => {
-    // Volver a la pantalla de búsqueda
-    router.back();
+  // Handle back button press - using direct navigation to home
+  const handleBackPress = () => {
+    console.log('SearchResultsScreen back button pressed - direct navigation');
+    router.replace('/(tabs)/home');
   };
   
   // Renderizar el componente
@@ -101,7 +102,11 @@ export default function SearchResultsScreen() {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={['bottom']}>
         <StatusBar style="light" />
-        <Header title="Resultados de Búsqueda" showBackButton />
+        <Header 
+          title="Resultados de Búsqueda" 
+          showBackButton
+          onBackPress={handleBackPress}
+        />
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -116,8 +121,8 @@ export default function SearchResultsScreen() {
       <Header 
         title="Resultados de Búsqueda"
         showBackButton
+        onBackPress={handleBackPress}
       />
-      
       
       <View style={styles.filtersContainer}>
         <ResultCount count={filteredTrips.length} />

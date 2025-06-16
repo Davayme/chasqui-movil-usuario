@@ -4,7 +4,7 @@
     "slug": "chasqui-movil-usuario",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/images/icon.png",
+    "icon": "./src/assets/images/chasqui-logo.png",
     "scheme": "chasquigo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./src/assets/images/adaptive-icon.png",
+        "foregroundImage": "./src/assets/images/chasqui-logo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -31,14 +31,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./src/assets/images/favicon.png"
+      "favicon": "./src/assets/images/chasqui-logo.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./src/assets/images/splash-icon.png",
+          "image": "./src/assets/images/chasqui-logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -68,7 +68,7 @@
         "origin": false,
         "initialRouteName": "./src/app"
       },
-      "apiUrl": "https://chasquigo-backend.onrender.com",
+      "apiUrl": "https://chasquigo-backend-7yn2.onrender.com",
       "eas": {
         "projectId": "b1554167-ea68-44f2-bdbf-30e35bb9b069"
       },

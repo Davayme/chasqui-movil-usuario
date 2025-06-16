@@ -27,10 +27,14 @@ export default function Header({
   const insets = useSafeAreaInsets();
   
   const handleBackPress = () => {
+    console.log('Header back button pressed');
     if (onBackPress) {
+      console.log('Using custom onBackPress handler');
       onBackPress();
     } else {
-      router.back();
+      console.log('Using default back navigation - direct to home');
+      // Use replace instead of back() for more reliable navigation
+      router.replace('/(tabs)/home');
     }
   };
 

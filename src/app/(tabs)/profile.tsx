@@ -30,51 +30,51 @@ export default function ProfileScreen() {
         </View>
         
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Información Personal</Text>
+          <Text style={styles.sectionTitle}>Mis Viajes</Text>
           
           <View style={styles.optionItem}>
-            <Ionicons name="person-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
+            <Ionicons name="ticket-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
             <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Editar Perfil</Text>
-              <Text style={styles.optionDescription}>Actualiza tu información personal</Text>
+              <Text style={styles.optionTitle}>Boletos Activos</Text>
+              <Text style={styles.optionDescription}>Visualiza tus boletos para viajes próximos</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
           </View>
           
           <View style={styles.optionItem}>
-            <Ionicons name="card-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
+            <Ionicons name="time-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
             <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Métodos de Pago</Text>
-              <Text style={styles.optionDescription}>Administra tus tarjetas y métodos de pago</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </View>
-        </View>
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferencias</Text>
-          
-          <View style={styles.optionItem}>
-            <Ionicons name="notifications-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Notificaciones</Text>
-              <Text style={styles.optionDescription}>Administra tus notificaciones</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </View>
-          
-          <View style={styles.optionItem}>
-            <Ionicons name="language-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Idioma</Text>
-              <Text style={styles.optionDescription}>Cambia el idioma de la aplicación</Text>
+              <Text style={styles.optionTitle}>Historial de Viajes</Text>
+              <Text style={styles.optionDescription}>Revisa tus viajes anteriores</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
           </View>
         </View>
         
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ayuda</Text>
+          <Text style={styles.sectionTitle}>Favoritos</Text>
+          
+          <View style={styles.optionItem}>
+            <Ionicons name="heart-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>Rutas Favoritas</Text>
+              <Text style={styles.optionDescription}>Accede rápidamente a tus rutas más frecuentes</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+          </View>
+          
+          <View style={styles.optionItem}>
+            <Ionicons name="star-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>Cooperativas Preferidas</Text>
+              <Text style={styles.optionDescription}>Visualiza las cooperativas que más utilizas</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+          </View>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Soporte</Text>
           
           <View style={styles.optionItem}>
             <Ionicons name="help-circle-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
