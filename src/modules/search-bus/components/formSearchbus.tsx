@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Colors } from '../../../common/constants/colors';
@@ -20,12 +20,25 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
   const [formattedDate, setFormattedDate] = useState('');
   const [calendarVisible, setCalendarVisible] = useState(false);
 
+  // Get today's date in YYYY-MM-DD format with timezone handling
+  const getTodayFormatted = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getTodayFormatted();
+
   // Función para formatear la fecha para mostrar
   const formatDisplayDate = (dateString: string) => {
     if (!dateString) return '';
+    
     // Asegurarnos de que la fecha se maneje en la zona horaria local
     const [year, month, day] = dateString.split('-').map(Number);
     const date = new Date(year, month - 1, day);
+    
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',
@@ -35,10 +48,20 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
 
   // Manejador para seleccionar fecha
   const handleDateSelect = (date: any) => {
+    console.log('Selected date:', date.dateString);
+    console.log('Today date:', today);
+    console.log('Are they equal?', date.dateString === today);
     setSelectedDate(date.dateString);
     setFormattedDate(formatDisplayDate(date.dateString));
     setCalendarVisible(false);
   };
+
+  // Set today's date on component mount
+  useEffect(() => {
+    console.log('Setting today as default date:', today);
+    setSelectedDate(today);
+    setFormattedDate(formatDisplayDate(today));
+  }, []);
 
   const handleSearch = () => {
     if (originCity && destinationCity && selectedDate) {
@@ -83,7 +106,7 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
       </View>
       
       <TouchableOpacity 
-        style={styles.inputContainer}
+        style={[styles.inputContainer, selectedDate ? styles.dateSelected : null]}
         onPress={() => setCalendarVisible(true)}
       >
         <Ionicons name="calendar-outline" size={22} color={Colors.primary} style={styles.inputIcon} />
@@ -113,20 +136,24 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
               </TouchableOpacity>
             </View>
             <Calendar
-              current={selectedDate || new Date().toISOString().split('T')[0]}
-              minDate={new Date().toISOString().split('T')[0]}
-              maxDate={new Date(2025, 11, 31).toISOString().split('T')[0]} // Permitir fechas hasta finales de 2025
+              current={selectedDate || today}
+              minDate={today}
+              maxDate="2025-12-31"
               onDayPress={handleDateSelect}
               markedDates={{
-                [selectedDate]: { selected: true, selectedColor: Colors.primary }
+                [selectedDate]: { selected: true, selectedColor: Colors.primary, marked: true }
               }}
               theme={{
                 todayTextColor: Colors.primary,
                 selectedDayBackgroundColor: Colors.primary,
                 textDayFontSize: 16,
                 textMonthFontSize: 16,
-                textDayHeaderFontSize: 14
+                textDayHeaderFontSize: 14,
+                arrowColor: Colors.primary
               }}
+              firstDay={1}
+              enableSwipeMonths={true}
+              disableAllTouchEventsForDisabledDays={true}
             />
           </View>
         </View>
@@ -159,6 +186,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     position: 'relative',
     zIndex: 1,
+  },
+  dateSelected: {
+    borderColor: Colors.primary,
+    borderWidth: 1.5,
+    backgroundColor: '#f0f7ff',
   },
   cityInputsContainer: {
     position: 'relative',

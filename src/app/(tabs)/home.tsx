@@ -1,8 +1,8 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 
-import { showToast } from "../../common/components/Toast";
 import SearchScreen from "@/src/modules/search-bus/screens/SearchScreen";
+import { showToast } from "../../common/components/Toast";
 
 export default function HomeScreen() {
   const [origin, setOrigin] = useState("");
@@ -21,8 +21,9 @@ export default function HomeScreen() {
       return;
     }
 
-    router.navigate({
-      pathname: "/(extras)/search-results" as any,
+    console.log('Navigating to search results with params:', { origin, destination, date });
+    router.push({
+      pathname: "/(extras)/search-results",
       params: { origin, destination, date },
     });
   };

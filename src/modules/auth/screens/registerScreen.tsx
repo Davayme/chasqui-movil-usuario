@@ -230,6 +230,13 @@ export default function RegisterScreen() {
     }
   };
 
+  // Handle back button press
+  const handleBackPress = () => {
+    console.log('RegisterScreen back button pressed - direct navigation');
+    // Use replace for more reliable navigation
+    router.replace('/(auth)/login');
+  };
+
   // Select document type
   const selectDocumentType = (type: string) => {
     setFormData({
@@ -251,7 +258,7 @@ export default function RegisterScreen() {
           <View style={styles.header}>
             <TouchableOpacity 
               style={styles.backButton}
-              onPress={() => router.back()}
+              onPress={handleBackPress}
             >
               <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
             </TouchableOpacity>
