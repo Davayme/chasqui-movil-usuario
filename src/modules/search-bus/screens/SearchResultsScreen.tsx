@@ -1,4 +1,3 @@
-import Header from '@/src/common/components/Header';
 import { Colors } from '@/src/common/constants/colors';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -91,22 +90,11 @@ export default function SearchResultsScreen() {
     setFilteredTrips(filtered);
   };
   
-  // Handle back button press - using direct navigation to home
-  const handleBackPress = () => {
-    console.log('SearchResultsScreen back button pressed - direct navigation');
-    router.replace('/(tabs)/home');
-  };
-  
   // Renderizar el componente
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer} edges={['bottom']}>
         <StatusBar style="light" />
-        <Header 
-          title="Resultados de Búsqueda" 
-          showBackButton
-          onBackPress={handleBackPress}
-        />
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -117,13 +105,6 @@ export default function SearchResultsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
-      
-      <Header 
-        title="Resultados de Búsqueda"
-        showBackButton
-        onBackPress={handleBackPress}
-      />
-      
       <View style={styles.filtersContainer}>
         <ResultCount count={filteredTrips.length} />
         <SearchFilters onApplyFilters={handleApplyFilters} />

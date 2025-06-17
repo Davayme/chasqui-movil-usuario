@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Header from '../../common/components/Header';
 import { Colors } from '../../common/constants/colors';
 
 // Datos de ejemplo para los detalles del viaje
@@ -63,10 +62,6 @@ export default function TripDetailScreen() {
   if (!trip) {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        <Header 
-          title="Detalle de Viaje"
-          showBackButton
-        />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>No se encontró información del viaje</Text>
         </View>
@@ -77,12 +72,7 @@ export default function TripDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
-      
-      <Header 
-        title="Detalle de Viaje"
-        showBackButton
-      />
-      
+        
       <ScrollView style={styles.content}>
         <View style={styles.companyCard}>
           <View style={styles.companyLogo}>
