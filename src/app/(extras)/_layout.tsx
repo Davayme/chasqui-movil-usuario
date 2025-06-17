@@ -2,7 +2,6 @@ import { Redirect, Stack } from "expo-router";
 import { useAuth } from "../../common/context/AuthContext";
 import { Colors } from "@/src/common/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
 export default function ExtrasLayout() {
   const { isAuthenticated } = useAuth();
 
@@ -17,6 +16,7 @@ export default function ExtrasLayout() {
         headerShown: true,
         headerStyle: { backgroundColor: Colors.primary },
         headerTintColor: "#fff",
+        headerTitleAlign: "center",
       }}
     >
       <Stack.Screen
