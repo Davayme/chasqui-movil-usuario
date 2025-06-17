@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { Colors } from '../../../common/constants/colors';
 
 interface SearchFiltersProps {
@@ -8,19 +8,26 @@ interface SearchFiltersProps {
 }
 
 export interface FilterOptions {
+  cooperative: string;
+  seatType: string;
+  busModel: string;
+  tripType: 'all' | 'direct' | 'stops';
   sortBy: 'price' | 'time' | 'duration';
-  timeRange: 'all' | 'morning' | 'afternoon' | 'evening';
-  minPrice: number;
-  maxPrice: number;
 }
+
+// Datos estáticos para las opciones de filtro
+const COOPERATIVES = ['Todas', 'Flota Imbabura', 'Transportes Ecuador', 'Cooperativa Quito', 'Patria'];
+const SEAT_TYPES = ['Todos', 'Semicama', 'Cama', 'VIP', 'Ejecutivo', 'Normal'];
+const BUS_MODELS = ['Todos', 'Mercedes Benz', 'Scania', 'Hino', 'Volvo', 'Marcopolo'];
 
 export default function SearchFilters({ onApplyFilters }: SearchFiltersProps) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
+    cooperative: 'Todas',
+    seatType: 'Todos',
+    busModel: 'Todos',
+    tripType: 'all',
     sortBy: 'time',
-    timeRange: 'all',
-    minPrice: 0,
-    maxPrice: 100,
   });
 
   const handleApplyFilters = () => {
@@ -28,12 +35,20 @@ export default function SearchFilters({ onApplyFilters }: SearchFiltersProps) {
     setIsModalVisible(false);
   };
 
-  const handleSortByChange = (sortBy: FilterOptions['sortBy']) => {
-    setFilters({ ...filters, sortBy });
+  const handleCooperativeChange = (cooperative: string) => {
+    setFilters({ ...filters, cooperative });
   };
 
-  const handleTimeRangeChange = (timeRange: FilterOptions['timeRange']) => {
-    setFilters({ ...filters, timeRange });
+  const handleSeatTypeChange = (seatType: string) => {
+    setFilters({ ...filters, seatType });
+  };
+
+  const handleBusModelChange = (busModel: string) => {
+    setFilters({ ...filters, busModel });
+  };
+
+  const handleTripTypeChange = (tripType: FilterOptions['tripType']) => {
+    setFilters({ ...filters, tripType });
   };
 
   return (
@@ -61,134 +76,199 @@ export default function SearchFilters({ onApplyFilters }: SearchFiltersProps) {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.filterSection}>
-              <Text style={styles.sectionTitle}>Ordenar por</Text>
-              <View style={styles.optionsContainer}>
-                <TouchableOpacity 
-                  style={[
-                    styles.optionButton,
-                    filters.sortBy === 'price' && styles.optionButtonActive
-                  ]}
-                  onPress={() => handleSortByChange('price')}
-                >
-                  <Text 
-                    style={[
-                      styles.optionText,
-                      filters.sortBy === 'price' && styles.optionTextActive
-                    ]}
-                  >
-                    Precio
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.optionButton,
-                    filters.sortBy === 'time' && styles.optionButtonActive
-                  ]}
-                  onPress={() => handleSortByChange('time')}
-                >
-                  <Text 
-                    style={[
-                      styles.optionText,
-                      filters.sortBy === 'time' && styles.optionTextActive
-                    ]}
-                  >
-                    Hora
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.optionButton,
-                    filters.sortBy === 'duration' && styles.optionButtonActive
-                  ]}
-                  onPress={() => handleSortByChange('duration')}
-                >
-                  <Text 
-                    style={[
-                      styles.optionText,
-                      filters.sortBy === 'duration' && styles.optionTextActive
-                    ]}
-                  >
-                    Duración
-                  </Text>
-                </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Cooperativa */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionTitle}>Cooperativa</Text>
+                <View style={styles.optionsContainer}>
+                  {COOPERATIVES.map((cooperative) => (
+                    <TouchableOpacity 
+                      key={cooperative}
+                      style={[
+                        styles.optionButton,
+                        filters.cooperative === cooperative && styles.optionButtonActive
+                      ]}
+                      onPress={() => handleCooperativeChange(cooperative)}
+                    >
+                      <Text 
+                        style={[
+                          styles.optionText,
+                          filters.cooperative === cooperative && styles.optionTextActive
+                        ]}
+                      >
+                        {cooperative}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            </View>
 
-            <View style={styles.filterSection}>
-              <Text style={styles.sectionTitle}>Horario</Text>
-              <View style={styles.optionsContainer}>
-                <TouchableOpacity 
-                  style={[
-                    styles.optionButton,
-                    filters.timeRange === 'all' && styles.optionButtonActive
-                  ]}
-                  onPress={() => handleTimeRangeChange('all')}
-                >
-                  <Text 
-                    style={[
-                      styles.optionText,
-                      filters.timeRange === 'all' && styles.optionTextActive
-                    ]}
-                  >
-                    Todos
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.optionButton,
-                    filters.timeRange === 'morning' && styles.optionButtonActive
-                  ]}
-                  onPress={() => handleTimeRangeChange('morning')}
-                >
-                  <Text 
-                    style={[
-                      styles.optionText,
-                      filters.timeRange === 'morning' && styles.optionTextActive
-                    ]}
-                  >
-                    Mañana
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.optionButton,
-                    filters.timeRange === 'afternoon' && styles.optionButtonActive
-                  ]}
-                  onPress={() => handleTimeRangeChange('afternoon')}
-                >
-                  <Text 
-                    style={[
-                      styles.optionText,
-                      filters.timeRange === 'afternoon' && styles.optionTextActive
-                    ]}
-                  >
-                    Tarde
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.optionButton,
-                    filters.timeRange === 'evening' && styles.optionButtonActive
-                  ]}
-                  onPress={() => handleTimeRangeChange('evening')}
-                >
-                  <Text 
-                    style={[
-                      styles.optionText,
-                      filters.timeRange === 'evening' && styles.optionTextActive
-                    ]}
-                  >
-                    Noche
-                  </Text>
-                </TouchableOpacity>
+              {/* Tipo de asiento */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionTitle}>Tipo de asiento</Text>
+                <View style={styles.optionsContainer}>
+                  {SEAT_TYPES.map((seatType) => (
+                    <TouchableOpacity 
+                      key={seatType}
+                      style={[
+                        styles.optionButton,
+                        filters.seatType === seatType && styles.optionButtonActive
+                      ]}
+                      onPress={() => handleSeatTypeChange(seatType)}
+                    >
+                      <Text 
+                        style={[
+                          styles.optionText,
+                          filters.seatType === seatType && styles.optionTextActive
+                        ]}
+                      >
+                        {seatType}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            </View>
+
+              {/* Marca del chasis/carrocería */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionTitle}>Marca del chasis/carrocería</Text>
+                <View style={styles.optionsContainer}>
+                  {BUS_MODELS.map((busModel) => (
+                    <TouchableOpacity 
+                      key={busModel}
+                      style={[
+                        styles.optionButton,
+                        filters.busModel === busModel && styles.optionButtonActive
+                      ]}
+                      onPress={() => handleBusModelChange(busModel)}
+                    >
+                      <Text 
+                        style={[
+                          styles.optionText,
+                          filters.busModel === busModel && styles.optionTextActive
+                        ]}
+                      >
+                        {busModel}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Tipo de viaje */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionTitle}>Tipo de viaje</Text>
+                <View style={styles.optionsContainer}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.tripType === 'all' && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleTripTypeChange('all')}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.tripType === 'all' && styles.optionTextActive
+                      ]}
+                    >
+                      Todos
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.tripType === 'direct' && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleTripTypeChange('direct')}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.tripType === 'direct' && styles.optionTextActive
+                      ]}
+                    >
+                      Directo
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.tripType === 'stops' && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleTripTypeChange('stops')}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.tripType === 'stops' && styles.optionTextActive
+                      ]}
+                    >
+                      Con paradas
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Ordenar por (lo mantuve porque también es útil) */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionTitle}>Ordenar por</Text>
+                <View style={styles.optionsContainer}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.sortBy === 'price' && styles.optionButtonActive
+                    ]}
+                    onPress={() => setFilters({...filters, sortBy: 'price'})}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.sortBy === 'price' && styles.optionTextActive
+                      ]}
+                    >
+                      Precio
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.sortBy === 'time' && styles.optionButtonActive
+                    ]}
+                    onPress={() => setFilters({...filters, sortBy: 'time'})}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.sortBy === 'time' && styles.optionTextActive
+                      ]}
+                    >
+                      Hora
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.sortBy === 'duration' && styles.optionButtonActive
+                    ]}
+                    onPress={() => setFilters({...filters, sortBy: 'duration'})}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.sortBy === 'duration' && styles.optionTextActive
+                      ]}
+                    >
+                      Duración
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
 
             <TouchableOpacity 
               style={styles.applyButton}
@@ -286,4 +366,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-}); 
+});
