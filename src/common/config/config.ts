@@ -23,6 +23,9 @@ export const API_ENDPOINTS = {
   QR: {
     GET_QR: '/qr/demo',
   },
+  AWS: {
+    VALIDATE_DOCUMENT: '/aws/validate-document',
+  },
 };
 
 

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { Colors } from '../../../common/constants/colors';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import SeatInfo from '../components/seat-details/seat-info';
+import { Colors } from '../../../common/constants/colors';
 import FormPassenger from '../components/seat-details/form-passenger';
+import SeatInfo from '../components/seat-details/seat-info';
 import UploadDocs from '../components/seat-details/upload-docs';
+import { ValidationResult } from '../services/aws.service';
 
 // Datos estáticos de ejemplo
 const DEMO_SEATS = [
@@ -47,6 +48,8 @@ export default function SeatDetailsScreen() {
       documentUri: '',
       documentType: '',
       documentName: '',
+      isValidated: false,
+      validationResult: null as ValidationResult | null,
     }))
   );
 
@@ -67,7 +70,6 @@ export default function SeatDetailsScreen() {
       passengers.map(p => (p.seatId === seatId ? { ...p, idNumber: text } : p))
     );
   };
-
   const handleDocumentSelected = (seatId: string, uri: string, type: string, name: string) => {
     setPassengers(
       passengers.map(p => (
@@ -78,9 +80,65 @@ export default function SeatDetailsScreen() {
     );
   };
 
+  const handleValidationResult = (seatId: string, result: ValidationResult) => {
+    setPassengers(
+      passengers.map(p => (
+        p.seatId === seatId 
+          ? { 
+              ...p, 
+              isValidated: result.isValid,
+              validationResult: result,
+              // Si la validación extrajo un número de cédula, usarlo
+              idNumber: result.nameValidation?.extractedIdNumber || p.idNumber
+            } 
+          : p
+      ))
+    );
+
+    // Mostrar alerta si la validación falló
+    if (!result.isValid) {
+      Alert.alert(
+        'Validación fallida',
+        result.reason || 'El documento no es válido para este tipo de asiento.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   const handleContinue = () => {
+    // Verificar que todos los asientos con descuento estén validados
+    const seatsWithDiscount = passengers.filter(p => {
+      const seat = DEMO_SEATS.find(s => s.id === p.seatId);
+      return seat && seat.seatType !== 'normal';
+    });
+
+    const invalidSeats = seatsWithDiscount.filter(p => !p.isValidated);
+    
+    if (invalidSeats.length > 0) {
+      Alert.alert(
+        'Validación pendiente',
+        'Debe validar los documentos de todos los asientos con descuento antes de continuar.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Verificar que todos los campos estén completos
+    const incompletePassengers = passengers.filter(p => 
+      !p.firstName.trim() || !p.lastName.trim() || !p.idNumber.trim()
+    );
+
+    if (incompletePassengers.length > 0) {
+      Alert.alert(
+        'Información incompleta',
+        'Complete toda la información de los pasajeros antes de continuar.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     // Aquí iría la lógica para enviar los datos al backend
-    console.log('Datos de pasajeros:', passengers);
+    console.log('Datos de pasajeros validados:', passengers);
   };
 
   return (
@@ -112,12 +170,16 @@ export default function SeatDetailsScreen() {
                 onChangeLastName={(text) => handleChangeLastName(seat.id, text)}
                 onChangeIdNumber={(text) => handleChangeIdNumber(seat.id, text)}
               />
-              
-              {needsDocument && (
+                {needsDocument && (
                 <UploadDocs
                   seatType={seat.seatType as any}
+                  firstName={passenger?.firstName || ''}
+                  lastName={passenger?.lastName || ''}
                   onDocumentSelected={(uri, type, name) => 
                     handleDocumentSelected(seat.id, uri, type, name)
+                  }
+                  onValidationResult={(result) => 
+                    handleValidationResult(seat.id, result)
                   }
                 />
               )}

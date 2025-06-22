@@ -1,21 +1,33 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Colors } from '../../../../common/constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Colors } from '../../../../common/constants/colors';
+import { awsService, ValidationResult } from '../../services/aws.service';
 
 type UploadDocsProps = {
   seatType: 'child' | 'elderly' | 'disabled';
   onDocumentSelected: (uri: string, type: string, name: string) => void;
+  onValidationResult: (result: ValidationResult) => void;
+  firstName: string;
+  lastName: string;
 };
 
-export default function UploadDocs({ seatType, onDocumentSelected }: UploadDocsProps) {
+export default function UploadDocs({ 
+  seatType, 
+  onDocumentSelected, 
+  onValidationResult,
+  firstName,
+  lastName
+}: UploadDocsProps) {
   const [documentInfo, setDocumentInfo] = useState<{
     uri: string;
     type: string;
     name: string;
   } | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationStatus, setValidationStatus] = useState<'pending' | 'success' | 'error' | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string>('');
 
   const getDocumentTypeLabel = () => {
     switch (seatType) {
@@ -42,7 +54,6 @@ export default function UploadDocs({ seatType, onDocumentSelected }: UploadDocsP
         return '';
     }
   };
-
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -52,18 +63,71 @@ export default function UploadDocs({ seatType, onDocumentSelected }: UploadDocsP
       
       if (result.canceled === false && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        setDocumentInfo({
+        const docInfo = {
           uri: asset.uri,
           type: asset.mimeType || 'application/octet-stream',
           name: asset.name || 'document',
-        });
+        };
         
+        setDocumentInfo(docInfo);
         onDocumentSelected(asset.uri, asset.mimeType || 'application/octet-stream', asset.name || 'document');
+        
+        // Validar automáticamente el documento si hay nombres y apellidos
+        if (firstName.trim() && lastName.trim()) {
+          await validateDocument(docInfo);
+        } else {
+          setValidationStatus('pending');
+          setValidationMessage('Complete el nombre y apellido para validar automáticamente');
+        }
       }
     } catch (error) {
       console.log('Error al seleccionar el documento:', error);
     }
   };
+  const validateDocument = useCallback(async (docInfo = documentInfo) => {
+    if (!docInfo || !firstName.trim() || !lastName.trim()) {
+      Alert.alert(
+        'Información incompleta',
+        'Por favor complete el nombre y apellido antes de validar el documento.'
+      );
+      return;
+    }
+
+    try {
+      setIsValidating(true);
+      setValidationStatus('pending');
+      setValidationMessage('Validando documento...');
+
+      const result = await awsService.validateDocumentComplete(
+        docInfo,
+        seatType,
+        firstName,
+        lastName
+      );
+
+      if (result.isValid) {
+        setValidationStatus('success');
+        setValidationMessage('✓ Documento validado correctamente');
+      } else {
+        setValidationStatus('error');
+        setValidationMessage(result.reason || 'Error en la validación del documento');
+      }
+
+      onValidationResult(result);
+    } catch (error) {
+      setValidationStatus('error');
+      setValidationMessage('Error al validar el documento. Intente nuevamente.');
+      console.error('Error validating document:', error);
+    } finally {
+      setIsValidating(false);
+    }
+  }, [documentInfo, firstName, lastName, seatType, onValidationResult]);
+  // Función para revalidar cuando cambien los nombres
+  React.useEffect(() => {
+    if (documentInfo && firstName.trim() && lastName.trim() && validationStatus === 'pending') {
+      validateDocument();
+    }
+  }, [firstName, lastName, documentInfo, validationStatus, validateDocument]);
 
   const isImage = documentInfo?.type && documentInfo.type.startsWith('image/');
 
@@ -89,10 +153,49 @@ export default function UploadDocs({ seatType, onDocumentSelected }: UploadDocsP
               </Text>
             </View>
           )}
-          
-          <TouchableOpacity style={styles.changeButton} onPress={pickDocument}>
+            <TouchableOpacity style={styles.changeButton} onPress={pickDocument}>
             <Text style={styles.changeButtonText}>Cambiar documento</Text>
           </TouchableOpacity>
+
+          {/* Estado de validación */}
+          {validationStatus && (
+            <View style={[
+              styles.validationStatus,
+              validationStatus === 'success' && styles.validationSuccess,
+              validationStatus === 'error' && styles.validationError,
+              validationStatus === 'pending' && styles.validationPending
+            ]}>
+              {isValidating ? (
+                <ActivityIndicator size="small" color={Colors.primary} />
+              ) : (
+                <Ionicons 
+                  name={validationStatus === 'success' ? 'checkmark-circle' : 
+                        validationStatus === 'error' ? 'close-circle' : 'time'} 
+                  size={20} 
+                  color={validationStatus === 'success' ? '#4CAF50' : 
+                         validationStatus === 'error' ? '#F44336' : Colors.primary} 
+                />
+              )}
+              <Text style={[
+                styles.validationText,
+                validationStatus === 'success' && styles.validationTextSuccess,
+                validationStatus === 'error' && styles.validationTextError,
+              ]}>
+                {validationMessage}
+              </Text>
+            </View>
+          )}
+
+          {/* Botón para revalidar manualmente */}
+          {validationStatus === 'error' && (
+            <TouchableOpacity 
+              style={styles.retryButton} 
+              onPress={() => validateDocument()}
+              disabled={isValidating}
+            >
+              <Text style={styles.retryButtonText}>Intentar nuevamente</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -156,9 +259,51 @@ const styles = StyleSheet.create({
   },
   changeButton: {
     padding: 8,
-  },
-  changeButtonText: {
+  },  changeButtonText: {
     color: Colors.accent,
+    fontWeight: '500',
+  },
+  validationStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  validationSuccess: {
+    backgroundColor: '#E8F5E8',
+    borderColor: '#4CAF50',
+  },
+  validationError: {
+    backgroundColor: '#FFEBEE',
+    borderColor: '#F44336',
+  },
+  validationPending: {
+    backgroundColor: '#E3F2FD',
+    borderColor: Colors.primary,
+  },
+  validationText: {
+    marginLeft: 8,
+    fontSize: 14,
+    flex: 1,
+  },
+  validationTextSuccess: {
+    color: '#2E7D32',
+  },
+  validationTextError: {
+    color: '#C62828',
+  },
+  retryButton: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: Colors.primary,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
     fontWeight: '500',
   }
 });
