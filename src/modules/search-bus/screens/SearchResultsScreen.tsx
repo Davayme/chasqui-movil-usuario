@@ -53,6 +53,36 @@ export default function SearchResultsScreen() {
   const handleApplyFilters = (filters: FilterOptions) => {
     let filtered = [...trips];
     
+    // Filtrar por cooperativa
+    if (filters.cooperative !== 'Todas') {
+      filtered = filtered.filter(trip => 
+        trip.cooperative.name.toLowerCase().includes(filters.cooperative.toLowerCase())
+      );
+    }
+    
+    // Filtrar por tipo de bus
+    if (filters.busType !== 'Todos') {
+      filtered = filtered.filter(trip => 
+        trip.bus.busType.name.toLowerCase().includes(filters.busType.toLowerCase())
+      );
+    }
+    
+    // Filtrar por marca del chasis
+    if (filters.chassisBrand !== 'Todos') {
+      filtered = filtered.filter(trip => 
+        trip.bus.chassisBrand.toLowerCase().includes(filters.chassisBrand.toLowerCase())
+      );
+    }
+    
+    // Filtrar por tipo de viaje (directo o con paradas)
+    if (filters.tripType !== 'all') {
+      if (filters.tripType === 'direct') {
+        filtered = filtered.filter(trip => trip.frequency.intermediateStops.length === 0);
+      } else if (filters.tripType === 'stops') {
+        filtered = filtered.filter(trip => trip.frequency.intermediateStops.length > 0);
+      }
+    }
+    
     // Filtrar por rango de tiempo
     if (filters.timeRange !== 'all') {
       filtered = filtered.filter(trip => {
@@ -99,7 +129,7 @@ export default function SearchResultsScreen() {
   // Renderizar el componente
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.loadingContainer} edges={['bottom']}>
+      <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
         <StatusBar style="light" />
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color={Colors.primary} />
@@ -109,8 +139,7 @@ export default function SearchResultsScreen() {
   }
   
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <StatusBar style="light" />
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.filtersContainer}>
         <ResultCount count={filteredTrips.length} />
         <SearchFilters onApplyFilters={handleApplyFilters} />
@@ -150,6 +179,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingRight: 16,
+    paddingLeft: 16,
+    paddingVertical: 12,
+    paddingTop: 8,
+    backgroundColor: '#fff',
+    marginTop: -25,
   },
   listContainer: {
     padding: 16,

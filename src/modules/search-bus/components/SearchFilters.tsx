@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../../common/constants/colors';
 
 interface SearchFiltersProps {
@@ -9,24 +9,24 @@ interface SearchFiltersProps {
 
 export interface FilterOptions {
   cooperative: string;
-  seatType: string;
-  busModel: string;
+  busType: string;
+  chassisBrand: string;
   tripType: 'all' | 'direct' | 'stops';
   timeRange: 'all' | 'morning' | 'afternoon' | 'evening';
   sortBy: 'price' | 'time' | 'duration';
 }
 
 // Datos estáticos para las opciones de filtro
-const COOPERATIVES = ['Todas', 'Flota Imbabura', 'Transportes Ecuador', 'Cooperativa Quito', 'Patria'];
-const SEAT_TYPES = ['Todos', 'Semicama', 'Cama', 'VIP', 'Ejecutivo', 'Normal'];
-const BUS_MODELS = ['Todos', 'Mercedes Benz', 'Scania', 'Hino', 'Volvo', 'Marcopolo'];
+const COOPERATIVES = ['Todas', 'Transportes Express', 'Flota Imbabura', 'Cooperativa Quito'];
+const BUS_TYPES = ['Todos', 'Ejecutivo', 'Premium', 'VIP', 'Normal'];
+const CHASSIS_BRANDS = ['Todos', 'Mercedes-Benz', 'Scania', 'Hino', 'Volvo'];
 
 export default function SearchFilters({ onApplyFilters }: SearchFiltersProps) {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     cooperative: 'Todas',
-    seatType: 'Todos',
-    busModel: 'Todos',
+    busType: 'Todos',
+    chassisBrand: 'Todos',
     tripType: 'all',
     timeRange: 'all',
     sortBy: 'time',
@@ -41,12 +41,12 @@ export default function SearchFilters({ onApplyFilters }: SearchFiltersProps) {
     setFilters({ ...filters, cooperative });
   };
 
-  const handleSeatTypeChange = (seatType: string) => {
-    setFilters({ ...filters, seatType });
+  const handleBusTypeChange = (busType: string) => {
+    setFilters({ ...filters, busType });
   };
 
-  const handleBusModelChange = (busModel: string) => {
-    setFilters({ ...filters, busModel });
+  const handleChassisBrandChange = (chassisBrand: string) => {
+    setFilters({ ...filters, chassisBrand });
   };
 
   const handleTimeRangeChange = (timeRange: FilterOptions['timeRange']) => {
@@ -109,52 +109,52 @@ export default function SearchFilters({ onApplyFilters }: SearchFiltersProps) {
                 </View>
               </View>
 
-              {/* Tipo de asiento */}
+              {/* Tipo de bus */}
               <View style={styles.filterSection}>
-                <Text style={styles.sectionTitle}>Tipo de asiento</Text>
+                <Text style={styles.sectionTitle}>Tipo de bus</Text>
                 <View style={styles.optionsContainer}>
-                  {SEAT_TYPES.map((seatType) => (
+                  {BUS_TYPES.map((busType) => (
                     <TouchableOpacity 
-                      key={seatType}
+                      key={busType}
                       style={[
                         styles.optionButton,
-                        filters.seatType === seatType && styles.optionButtonActive
+                        filters.busType === busType && styles.optionButtonActive
                       ]}
-                      onPress={() => handleSeatTypeChange(seatType)}
+                      onPress={() => handleBusTypeChange(busType)}
                     >
                       <Text 
                         style={[
                           styles.optionText,
-                          filters.seatType === seatType && styles.optionTextActive
+                          filters.busType === busType && styles.optionTextActive
                         ]}
                       >
-                        {seatType}
+                        {busType}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
 
-              {/* Marca del chasis/carrocería */}
+              {/* Marca del chasis */}
               <View style={styles.filterSection}>
-                <Text style={styles.sectionTitle}>Marca del chasis/carrocería</Text>
+                <Text style={styles.sectionTitle}>Marca del chasis</Text>
                 <View style={styles.optionsContainer}>
-                  {BUS_MODELS.map((busModel) => (
+                  {CHASSIS_BRANDS.map((chassisBrand) => (
                     <TouchableOpacity 
-                      key={busModel}
+                      key={chassisBrand}
                       style={[
                         styles.optionButton,
-                        filters.busModel === busModel && styles.optionButtonActive
+                        filters.chassisBrand === chassisBrand && styles.optionButtonActive
                       ]}
-                      onPress={() => handleBusModelChange(busModel)}
+                      onPress={() => handleChassisBrandChange(chassisBrand)}
                     >
                       <Text 
                         style={[
                           styles.optionText,
-                          filters.busModel === busModel && styles.optionTextActive
+                          filters.chassisBrand === chassisBrand && styles.optionTextActive
                         ]}
                       >
-                        {busModel}
+                        {chassisBrand}
                       </Text>
                     </TouchableOpacity>
                   ))}

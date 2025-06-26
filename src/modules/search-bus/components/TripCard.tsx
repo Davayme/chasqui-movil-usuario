@@ -37,11 +37,19 @@ export default function TripCard({ trip }: TripCardProps) {
             style={styles.companyLogo}
             contentFit="contain"
           />
-          <Text style={styles.companyName}>{trip.cooperative.name}</Text>
+          <View>
+            <Text style={styles.companyName}>{trip.cooperative.name}</Text>
+            <Text style={styles.busInfo}>
+              {trip.bus.chassisBrand} • {trip.bus.bodyworkBrand}
+            </Text>
+          </View>
         </View>
         <View style={styles.busTypeContainer}>
           <Text style={styles.busTypeText}>
-            {trip.bus.busType.floorCount > 1 ? 'Dos Pisos' : 'Ejecutivo'}
+            {trip.bus.busType.name}
+          </Text>
+          <Text style={styles.capacityText}>
+            {trip.bus.busType.capacity} asientos
           </Text>
         </View>
       </View>
@@ -136,16 +144,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.textPrimary,
   },
+  busInfo: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
   busTypeContainer: {
     backgroundColor: Colors.primary + '20',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
+    alignItems: 'center',
   },
   busTypeText: {
     fontSize: 12,
     color: Colors.primary,
     fontWeight: '500',
+  },
+  capacityText: {
+    fontSize: 10,
+    color: Colors.primary,
+    marginTop: 2,
   },
   tripDetails: {
     marginBottom: 12,
@@ -233,4 +252,4 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-}); 
+});
