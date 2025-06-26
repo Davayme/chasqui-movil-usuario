@@ -4,23 +4,23 @@ import { router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../../common/constants/colors';
-import { formatCurrency, formatDuration, formatTime } from '../services/formattingUtils';
-import { TripSearchResult } from '../services/interfaces';
+import { formatCurrency, formatTimeFromString } from '../services/formattingUtils';
+import { TripSearchResult } from '../services/searchService';
 
 interface TripCardProps {
   trip: TripSearchResult;
 }
 
 export default function TripCard({ trip }: TripCardProps) {
-  // Calcular la hora de llegada estimada (departureTime + 4 horas por defecto)
-  const estimatedArrivalTime = new Date(trip.departureTime);
-  estimatedArrivalTime.setHours(estimatedArrivalTime.getHours() + 4);
+  // Calcular asientos disponibles
+  const totalAvailable = trip.seatsAvailability.normal.available + trip.seatsAvailability.vip.available;
+  const totalSeats = trip.seatsAvailability.normal.total + trip.seatsAvailability.vip.total;
   
   // Función para navegar a los detalles del viaje
   const handleSelectTrip = () => {
     router.push({
       pathname: '/(extras)/seat-selection',
-      params: { tripId: trip.id.toString() }
+      params: { tripId: trip.routeSheetDetailId.toString() }
     });
   };
 
@@ -33,65 +33,65 @@ export default function TripCard({ trip }: TripCardProps) {
       <View style={styles.tripHeader}>
         <View style={styles.companyContainer}>
           <Image 
-            source={{ uri: trip.cooperativeLogo }} 
+            source={{ uri: trip.cooperative.logo }} 
             style={styles.companyLogo}
             contentFit="contain"
           />
-          <Text style={styles.companyName}>{trip.cooperativeName}</Text>
+          <Text style={styles.companyName}>{trip.cooperative.name}</Text>
         </View>
         <View style={styles.busTypeContainer}>
           <Text style={styles.busTypeText}>
-            {trip.busDetails.floorCount > 1 ? 'Dos Pisos' : 'Ejecutivo'}
+            {trip.bus.busType.floorCount > 1 ? 'Dos Pisos' : 'Ejecutivo'}
           </Text>
         </View>
       </View>
       
       <View style={styles.tripDetails}>
         <View style={styles.timeContainer}>
-          <Text style={styles.timeText}>{formatTime(trip.departureTime)}</Text>
+          <Text style={styles.timeText}>{formatTimeFromString(trip.frequency.departureTime)}</Text>
           <View style={styles.durationContainer}>
             <View style={styles.durationLine} />
             <Text style={styles.durationText}>
-              {formatDuration(trip.departureTime, estimatedArrivalTime)}
+              {trip.duration}
             </Text>
             <View style={styles.durationLine} />
           </View>
-          <Text style={styles.timeText}>{formatTime(estimatedArrivalTime)}</Text>
+          <Text style={styles.timeText}>{formatTimeFromString(trip.estimatedArrival)}</Text>
         </View>
         
         <View style={styles.routeContainer}>
-          <Text style={styles.cityText}>{trip.originCity}</Text>
-          <Text style={styles.cityText}>{trip.destinationCity}</Text>
+          <Text style={styles.cityText}>{trip.frequency.originCity.name}</Text>
+          <Text style={styles.cityText}>{trip.frequency.destinationCity.name}</Text>
         </View>
         
-        {trip.intermediateStops.length > 0 && (
+        {trip.frequency.intermediateStops.length > 0 && (
           <View style={styles.stopsContainer}>
             <Ionicons name="ellipsis-horizontal" size={16} color={Colors.textSecondary} />
             <Text style={styles.stopsText}>
-              {trip.intermediateStops.length} {trip.intermediateStops.length === 1 ? 'parada' : 'paradas'} intermedias
+              {trip.frequency.intermediateStops.length} {trip.frequency.intermediateStops.length === 1 ? 'parada' : 'paradas'} intermedias
             </Text>
           </View>
         )}
         
         <View style={styles.seatsContainer}>
           <Ionicons 
-            name={trip.availableSeats < 10 ? "alert-circle-outline" : "person-outline"} 
+            name={totalAvailable < 10 ? "alert-circle-outline" : "person-outline"} 
             size={16} 
-            color={trip.availableSeats < 10 ? Colors.warning : Colors.textSecondary} 
+            color={totalAvailable < 10 ? Colors.warning : Colors.textSecondary} 
           />
           <Text 
             style={[
               styles.seatsText,
-              trip.availableSeats < 10 ? styles.seatsWarning : null
+              totalAvailable < 10 ? styles.seatsWarning : null
             ]}
           >
-            {trip.availableSeats} de {trip.totalSeats} asientos disponibles
+            {totalAvailable} de {totalSeats} asientos disponibles
           </Text>
         </View>
       </View>
       
       <View style={styles.tripFooter}>
-        <Text style={styles.priceText}>{formatCurrency(trip.price)}</Text>
+        <Text style={styles.priceText}>{formatCurrency(trip.pricing.normalSeat.basePrice)}</Text>
         <TouchableOpacity 
           style={styles.selectButton}
           onPress={handleSelectTrip}

@@ -1,5 +1,5 @@
 import { Colors } from '@/src/common/constants/colors';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
@@ -8,8 +8,7 @@ import NoResults from '../components/NoResults';
 import ResultCount from '../components/ResultCount';
 import SearchFilters, { FilterOptions } from '../components/SearchFilters';
 import TripCard from '../components/TripCard';
-import { TripSearchResult } from '../services/interfaces';
-import { searchAvailableTrips } from '../services/mockData';
+import { TripSearchResult, searchAvailableTrips } from '../services/searchService';
 
 export default function SearchResultsScreen() {
   // Obtener los parámetros de búsqueda
@@ -30,8 +29,8 @@ export default function SearchResultsScreen() {
         // Simular tiempo de carga
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Buscar viajes disponibles
-        const results = searchAvailableTrips(
+        // Buscar viajes disponibles usando el endpoint real
+        const results = await searchAvailableTrips(
           origin as string, 
           destination as string, 
           date as string
@@ -57,7 +56,7 @@ export default function SearchResultsScreen() {
     // Filtrar por rango de tiempo
     if (filters.timeRange !== 'all') {
       filtered = filtered.filter(trip => {
-        const hour = new Date(trip.departureTime).getHours();
+        const hour = new Date(`2000-01-01T${trip.frequency.departureTime}`).getHours();
         
         switch (filters.timeRange) {
           case 'morning':
@@ -75,15 +74,22 @@ export default function SearchResultsScreen() {
     // Ordenar resultados
     switch (filters.sortBy) {
       case 'price':
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => a.pricing.normalSeat.basePrice - b.pricing.normalSeat.basePrice);
         break;
       case 'time':
-        filtered.sort((a, b) => 
-          new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()
-        );
+        filtered.sort((a, b) => {
+          const timeA = new Date(`2000-01-01T${a.frequency.departureTime}`).getTime();
+          const timeB = new Date(`2000-01-01T${b.frequency.departureTime}`).getTime();
+          return timeA - timeB;
+        });
         break;
       case 'duration':
-        // Como no tenemos duración real, usamos un valor fijo para este ejemplo
+        // Ordenar por duración estimada
+        filtered.sort((a, b) => {
+          const durationA = parseFloat(a.duration) || 0;
+          const durationB = parseFloat(b.duration) || 0;
+          return durationA - durationB;
+        });
         break;
     }
     
@@ -116,7 +122,7 @@ export default function SearchResultsScreen() {
         <FlatList
           data={filteredTrips}
           renderItem={({ item }) => <TripCard trip={item} />}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={item => item.routeSheetDetailId.toString()}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />

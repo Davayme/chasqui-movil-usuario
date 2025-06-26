@@ -12,23 +12,23 @@ import {
   View
 } from 'react-native';
 import { Colors } from '../../../common/constants/colors';
-import { City, searchCities } from '../services/searchService';
+import { CityAutocomplete, searchCities } from '../services/searchService';
 
 interface CityAutocompleteProps {
   placeholder: string;
   value: string;
-  onSelectCity: (city: City) => void;
+  onSelectCity: (city: CityAutocomplete) => void;
   icon: string;
 }
 
-export default function CityAutocomplete({ 
+export default function CityAutoCompleteComponent({ 
   placeholder, 
   value, 
   onSelectCity,
   icon
 }: CityAutocompleteProps) {
   const [query, setQuery] = useState(value);
-  const [suggestions, setSuggestions] = useState<City[]>([]);
+  const [suggestions, setSuggestions] = useState<CityAutocomplete[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const containerRef = useRef<View>(null);
@@ -73,7 +73,7 @@ export default function CityAutocomplete({
     };
   }, []);
 
-  const handleSelect = (city: City) => {
+  const handleSelect = (city: CityAutocomplete) => {
     setQuery(city.name);
     setSuggestions([]);
     setShowSuggestions(false);

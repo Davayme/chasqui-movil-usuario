@@ -12,6 +12,7 @@ export interface FilterOptions {
   seatType: string;
   busModel: string;
   tripType: 'all' | 'direct' | 'stops';
+  timeRange: 'all' | 'morning' | 'afternoon' | 'evening';
   sortBy: 'price' | 'time' | 'duration';
 }
 
@@ -27,6 +28,7 @@ export default function SearchFilters({ onApplyFilters }: SearchFiltersProps) {
     seatType: 'Todos',
     busModel: 'Todos',
     tripType: 'all',
+    timeRange: 'all',
     sortBy: 'time',
   });
 
@@ -45,6 +47,10 @@ export default function SearchFilters({ onApplyFilters }: SearchFiltersProps) {
 
   const handleBusModelChange = (busModel: string) => {
     setFilters({ ...filters, busModel });
+  };
+
+  const handleTimeRangeChange = (timeRange: FilterOptions['timeRange']) => {
+    setFilters({ ...filters, timeRange });
   };
 
   const handleTripTypeChange = (tripType: FilterOptions['tripType']) => {
@@ -152,6 +158,80 @@ export default function SearchFilters({ onApplyFilters }: SearchFiltersProps) {
                       </Text>
                     </TouchableOpacity>
                   ))}
+                </View>
+              </View>
+
+              {/* Horario de salida */}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionTitle}>Horario de salida</Text>
+                <View style={styles.optionsContainer}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.timeRange === 'all' && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleTimeRangeChange('all')}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.timeRange === 'all' && styles.optionTextActive
+                      ]}
+                    >
+                      Todos
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.timeRange === 'morning' && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleTimeRangeChange('morning')}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.timeRange === 'morning' && styles.optionTextActive
+                      ]}
+                    >
+                      Mañana (5:00 - 12:00)
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.timeRange === 'afternoon' && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleTimeRangeChange('afternoon')}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.timeRange === 'afternoon' && styles.optionTextActive
+                      ]}
+                    >
+                      Tarde (12:00 - 18:00)
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[
+                      styles.optionButton,
+                      filters.timeRange === 'evening' && styles.optionButtonActive
+                    ]}
+                    onPress={() => handleTimeRangeChange('evening')}
+                  >
+                    <Text 
+                      style={[
+                        styles.optionText,
+                        filters.timeRange === 'evening' && styles.optionTextActive
+                      ]}
+                    >
+                      Noche (18:00 - 5:00)
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 
