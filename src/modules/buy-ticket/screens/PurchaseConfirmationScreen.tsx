@@ -17,14 +17,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PurchaseConfirmationScreen() {
   const params = useLocalSearchParams();
-  const { tripId, seats, passengers, busInfo, routeInfo } = params;
+  const { tripId, seats, passengers, routeInfo, pricing } = params;
 
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState<any[]>([]);
   const [passengerData, setPassengerData] = useState<any[]>([]);
-  const [busData, setBusData] = useState<any>(null);
   const [routeData, setRouteData] = useState<any>(null);
+  const [pricingData, setPricingData] = useState<any>(null);
 
   // Usar el hook de Stripe para procesar pagos
   const { processPayment } = useStripePayment();
@@ -44,12 +44,12 @@ export default function PurchaseConfirmationScreen() {
           setPassengerData(parsedPassengers);
         }
         
-        if (busInfo) {
-          setBusData(JSON.parse(busInfo as string));
-        }
-        
         if (routeInfo) {
           setRouteData(JSON.parse(routeInfo as string));
+        }
+        
+        if (pricing) {
+          setPricingData(JSON.parse(pricing as string));
         }
       } catch (error) {
         console.error("Error al cargar datos:", error);
@@ -60,24 +60,50 @@ export default function PurchaseConfirmationScreen() {
     };
 
     loadData();
-  }, [tripId, seats, passengers, busInfo, routeInfo]);
+  }, [tripId, seats, passengers, routeInfo, pricing]);
 
   // Función para calcular el precio total
   const calculateTotalPrice = () => {
     if (!selectedSeats.length || !passengerData.length) return 0;
     
-    const basePrice = 25; // Precio base
-    const vipMultiplier = 1.5;
+    // Precios reales del backend
+    let basePrice = 4; // Precio real para asientos normales
+    let vipPrice = 6;  // Precio real para asientos VIP
+    
+    // Si tenemos datos de pricing del backend, usarlos
+    if (pricingData) {
+      basePrice = pricingData.normalSeat.basePrice;
+      vipPrice = pricingData.vipSeat.basePrice;
+    }
     
     let total = 0;
     
     selectedSeats.forEach(seat => {
       const passenger = passengerData.find(p => p.seatId === seat.id);
-      const originalPrice = seat.type === 'VIP' ? basePrice * vipMultiplier : basePrice;
+      const originalPrice = seat.type === 'VIP' ? vipPrice : basePrice;
       
       // Aplicar descuentos según el tipo de pasajero
       if (passenger && ['child', 'elderly', 'disabled'].includes(passenger.passengerType)) {
-        total += originalPrice * 0.5; // 50% de descuento
+        let discountedPrice = originalPrice * 0.5; // 50% de descuento por defecto
+        
+        // Si tenemos información de descuentos específicos del backend
+        if (pricingData) {
+          const seatPricing = seat.type === 'VIP' ? pricingData.vipSeat : pricingData.normalSeat;
+          
+          switch (passenger.passengerType) {
+            case 'child':
+              discountedPrice = seatPricing.discounts.CHILD;
+              break;
+            case 'elderly':
+              discountedPrice = seatPricing.discounts.SENIOR;
+              break;
+            case 'disabled':
+              discountedPrice = seatPricing.discounts.HANDICAPPED;
+              break;
+          }
+        }
+        
+        total += discountedPrice;
       } else {
         total += originalPrice;
       }
@@ -167,12 +193,40 @@ export default function PurchaseConfirmationScreen() {
           <Text style={styles.sectionTitle}>Detalles de Asientos</Text>
           {selectedSeats.map((seat, index) => {
             const passenger = passengerData.find(p => p.seatId === seat.id);
-            const basePrice = 25;
-            const vipMultiplier = 1.5;
-            const originalPrice = seat.type === 'VIP' ? basePrice * vipMultiplier : basePrice;
-            const finalPrice = passenger && ['child', 'elderly', 'disabled'].includes(passenger.passengerType) 
-              ? originalPrice * 0.5 
-              : originalPrice;
+            
+            // Usar precios reales del backend
+            let basePrice = 4; // Precio real para asientos normales
+            let vipPrice = 6;  // Precio real para asientos VIP
+            
+            if (pricingData) {
+              basePrice = pricingData.normalSeat.basePrice;
+              vipPrice = pricingData.vipSeat.basePrice;
+            }
+            
+            const originalPrice = seat.type === 'VIP' ? vipPrice : basePrice;
+            let finalPrice = originalPrice;
+            
+            // Aplicar descuentos según el tipo de pasajero
+            if (passenger && ['child', 'elderly', 'disabled'].includes(passenger.passengerType)) {
+              finalPrice = originalPrice * 0.5; // 50% de descuento por defecto
+              
+              // Si tenemos información de descuentos específicos del backend
+              if (pricingData) {
+                const seatPricing = seat.type === 'VIP' ? pricingData.vipSeat : pricingData.normalSeat;
+                
+                switch (passenger.passengerType) {
+                  case 'child':
+                    finalPrice = seatPricing.discounts.CHILD;
+                    break;
+                  case 'elderly':
+                    finalPrice = seatPricing.discounts.SENIOR;
+                    break;
+                  case 'disabled':
+                    finalPrice = seatPricing.discounts.HANDICAPPED;
+                    break;
+                }
+              }
+            }
 
             return (
               <View key={`seat-${seat.id}-${index}`} style={styles.seatCard}>

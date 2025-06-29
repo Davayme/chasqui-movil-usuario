@@ -5,8 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { formatCurrency, formatTimeFromString } from '../../search-bus/services/formattingUtils';
-import { BusSeatsResponse, Seat, fetchBusSeats, organizeSeatsByRow } from '../services/seatService';
+import { formatTimeFromString } from '../../search-bus/services/formattingUtils';
+import { BusSeatsResponse, Seat, fetchBusSeats } from '../services/seatService';
 
 export default function SeatSelectionScreen() {
   const params = useLocalSearchParams();
@@ -81,8 +81,8 @@ export default function SeatSelectionScreen() {
       params: { 
         tripId: tripId as string,
         seats: JSON.stringify(selectedSeatData),
-        busInfo: JSON.stringify(busData?.busInfo),
-        routeInfo: JSON.stringify(busData?.routeInfo)
+        routeInfo: JSON.stringify(busData?.routeInfo),
+        pricing: JSON.stringify(busData?.pricing)
       }
     });
   };
@@ -138,6 +138,52 @@ export default function SeatSelectionScreen() {
     );
   };
   
+  // Agrupar asientos por filas según su ubicación real
+  const groupSeatsByRow = () => {
+    const currentSeats = getCurrentFloorSeats();
+    const rows: { [key: number]: Seat[] } = {};
+    const middleSeats: Seat[] = [];
+
+    currentSeats.forEach((seat) => {
+      // Si es un asiento del medio, lo guardamos por separado
+      if (seat.location === 'MIDDLE') {
+        middleSeats.push(seat);
+      } else {
+        // Determinar la fila basándose en los datos del backend
+        // En un bus estándar de 4 asientos por fila (2-2), calculamos la fila
+        let rowNumber: number;
+        
+        // Calcular fila basándose en el número del asiento
+        // Asumiendo que cada 4 asientos consecutivos forman una fila
+        rowNumber = Math.floor((Number(seat.number) - 1) / 4) + 1;
+        
+        if (!rows[rowNumber]) {
+          rows[rowNumber] = [];
+        }
+        rows[rowNumber].push(seat);
+      }
+    });
+
+    // Ordenar asientos dentro de cada fila por ubicación
+    Object.keys(rows).forEach((rowKey) => {
+      const rowNumber = parseInt(rowKey);
+      const locationOrder = { 
+        'WINDOW_LEFT': 0, 
+        'AISLE_LEFT': 1, 
+        'AISLE_RIGHT': 2, 
+        'WINDOW_RIGHT': 3 
+      };
+      
+      rows[rowNumber].sort((a, b) => {
+        const orderA = locationOrder[a.location as keyof typeof locationOrder] ?? 999;
+        const orderB = locationOrder[b.location as keyof typeof locationOrder] ?? 999;
+        return orderA - orderB;
+      });
+    });
+
+    return { rows, middleSeats };
+  };
+
   // Renderizar el layout del bus por filas
   const renderBusLayout = () => {
     const currentSeats = getCurrentFloorSeats();
@@ -149,38 +195,51 @@ export default function SeatSelectionScreen() {
       );
     }
     
-    // Organizar asientos por filas
-    const seatRows = organizeSeatsByRow(currentSeats);
+    const { rows, middleSeats } = groupSeatsByRow();
+    const rowNumbers = Object.keys(rows).map(Number).sort((a, b) => a - b);
     
-    return seatRows.map((rowSeats, rowIndex) => {
-      // Dividir la fila en dos grupos (izquierda y derecha del pasillo)
-      const leftSeats = rowSeats.filter(seat => {
-        const seatLetter = seat.number.replace(/[0-9]/g, '');
-        return ['A', 'B'].includes(seatLetter);
-      });
-      
-      const rightSeats = rowSeats.filter(seat => {
-        const seatLetter = seat.number.replace(/[0-9]/g, '');
-        return ['C', 'D'].includes(seatLetter);
-      });
-      
-      return (
-        <View key={rowIndex} style={styles.seatRow}>
-          {/* Lado izquierdo */}
-          <View style={styles.seatSide}>
-            {leftSeats.map(seat => renderSeat(seat))}
-          </View>
+    return (
+      <>
+        {/* Renderizar filas normales */}
+        {rowNumbers.map((rowNumber) => {
+          const rowSeats = rows[rowNumber];
           
-          {/* Pasillo */}
-          <View style={styles.aisle} />
+          // Separar asientos por ubicación
+          const windowLeft = rowSeats.find(seat => seat.location === 'WINDOW_LEFT');
+          const aisleLeft = rowSeats.find(seat => seat.location === 'AISLE_LEFT');
+          const aisleRight = rowSeats.find(seat => seat.location === 'AISLE_RIGHT');
+          const windowRight = rowSeats.find(seat => seat.location === 'WINDOW_RIGHT');
           
-          {/* Lado derecho */}
-          <View style={styles.seatSide}>
-            {rightSeats.map(seat => renderSeat(seat))}
+          return (
+            <View key={rowNumber} style={styles.seatRow}>
+              {/* Lado izquierdo (Ventana izquierda + Pasillo izquierdo) */}
+              <View style={styles.seatSide}>
+                {windowLeft && renderSeat(windowLeft)}
+                {aisleLeft && renderSeat(aisleLeft)}
+              </View>
+              
+              {/* Pasillo central */}
+              <View style={styles.aisle} />
+              
+              {/* Lado derecho (Pasillo derecho + Ventana derecha) */}
+              <View style={styles.seatSide}>
+                {aisleRight && renderSeat(aisleRight)}
+                {windowRight && renderSeat(windowRight)}
+              </View>
+            </View>
+          );
+        })}
+
+        {/* Renderizar asientos del medio al final */}
+        {middleSeats.length > 0 && (
+          <View style={styles.seatRow}>
+            <View style={styles.middleSeatContainer}>
+              {middleSeats.map(seat => renderSeat(seat))}
+            </View>
           </View>
-        </View>
-      );
-    });
+        )}
+      </>
+    );
   };
   
   // Renderizar botones de piso si hay múltiples pisos
@@ -215,22 +274,7 @@ export default function SeatSelectionScreen() {
     );
   };
   
-  // Calcular precio total
-  const calculateTotalPrice = () => {
-    if (!busData?.routeInfo || selectedSeats.length === 0) return 0;
-    
-    const currentSeats = getCurrentFloorSeats();
-    const selectedSeatData = currentSeats.filter(seat => selectedSeats.includes(seat.id));
-    
-    // Precio base por asiento (esto debería venir del backend)
-    const basePrice = 25; // Precio temporal, debería venir de la API
-    
-    return selectedSeatData.reduce((total, seat) => {
-      // Los asientos VIP pueden tener un precio diferente
-      const seatPrice = seat.type === 'VIP' ? basePrice * 1.5 : basePrice;
-      return total + seatPrice;
-    }, 0);
-  };
+
   
   if (isLoading) {
     return (
@@ -342,9 +386,6 @@ export default function SeatSelectionScreen() {
         <View style={styles.selectionInfo}>
           <Text style={styles.selectionText}>
             {selectedSeats.length} {selectedSeats.length === 1 ? 'asiento' : 'asientos'} seleccionados
-          </Text>
-          <Text style={styles.priceText}>
-            Total: {formatCurrency(calculateTotalPrice())}
           </Text>
         </View>
         
@@ -635,5 +676,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  middleSeatContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
   },
 });

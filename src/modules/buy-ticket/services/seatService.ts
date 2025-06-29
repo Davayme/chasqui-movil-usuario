@@ -5,8 +5,15 @@ export interface Seat {
   id: number;
   number: string;
   type: 'VIP' | 'NORMAL';
-  location: 'ventana' | 'pasillo';
+  location: 'WINDOW_LEFT' | 'WINDOW_RIGHT' | 'AISLE_LEFT' | 'AISLE_RIGHT' | 'MIDDLE';
   isOccupied: boolean;
+  occupiedBy?: {
+    ticketId: number;
+    ticketPassengerId: number;
+    passengerType: string;
+    passengerName: string;
+    ticketStatus: string;
+  };
 }
 
 export interface FloorLayout {
@@ -52,11 +59,31 @@ export interface SeatAvailability {
   };
 }
 
+export interface SeatPricing {
+  normalSeat: {
+    basePrice: number;
+    discounts: {
+      CHILD: number;
+      SENIOR: number;
+      HANDICAPPED: number;
+    };
+  };
+  vipSeat: {
+    basePrice: number;
+    discounts: {
+      CHILD: number;
+      SENIOR: number;
+      HANDICAPPED: number;
+    };
+  };
+}
+
 export interface BusSeatsResponse {
   busInfo: BusInfo;
   routeInfo: RouteInfo;
   seatsLayout: FloorLayout[];
   availability: SeatAvailability;
+  pricing?: SeatPricing; // Opcional por ahora, hasta que se actualice el backend
 }
 
 // Función para obtener los asientos del bus

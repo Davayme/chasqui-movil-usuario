@@ -8,7 +8,7 @@ import FormPassenger from '../components/seat-details/form-passenger';
 import PassengerTypeSelector from '../components/seat-details/passenger-type-selector';
 import UploadDocs from '../components/seat-details/upload-docs';
 import { ValidationResult } from '../services/aws.service';
-import { BusInfo, RouteInfo } from '../services/seatService';
+import { RouteInfo, SeatPricing } from '../services/seatService';
 
 interface SelectedSeat {
   id: number;
@@ -32,11 +32,11 @@ interface PassengerData {
 
 export default function SeatDetailsScreen() {
   const params = useLocalSearchParams();
-  const { tripId, seats, busInfo, routeInfo } = params;
+  const { tripId, seats, routeInfo, pricing } = params;
   
   const [selectedSeats, setSelectedSeats] = useState<SelectedSeat[]>([]);
-  const [busData, setBusData] = useState<BusInfo | null>(null);
   const [routeData, setRouteData] = useState<RouteInfo | null>(null);
+  const [pricingData, setPricingData] = useState<SeatPricing | null>(null);
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
 
   useEffect(() => {
@@ -62,19 +62,19 @@ export default function SeatDetailsScreen() {
         setPassengers(initialPassengers);
       }
       
-      if (busInfo) {
-        setBusData(JSON.parse(busInfo as string));
-      }
-      
       if (routeInfo) {
         setRouteData(JSON.parse(routeInfo as string));
+      }
+      
+      if (pricing) {
+        setPricingData(JSON.parse(pricing as string));
       }
     } catch (error) {
       console.error('Error parsing seat data:', error);
       Alert.alert('Error', 'No se pudieron cargar los datos de los asientos');
       router.back();
     }
-  }, [seats, busInfo, routeInfo]);
+  }, [seats, routeInfo, pricing]);
 
   const handleChangeFirstName = (seatId: number, text: string) => {
     setPassengers(
@@ -184,8 +184,8 @@ export default function SeatDetailsScreen() {
         tripId: tripId as string,
         seats: JSON.stringify(selectedSeats),
         passengers: JSON.stringify(passengers),
-        busInfo: JSON.stringify(busData),
-        routeInfo: JSON.stringify(routeData)
+        routeInfo: JSON.stringify(routeData),
+        pricing: JSON.stringify(pricingData)
       }
     });
   };
@@ -206,14 +206,39 @@ export default function SeatDetailsScreen() {
   };
 
   const calculatePrice = (seat: SelectedSeat, passenger?: PassengerData): { original: number; discounted?: number } => {
-    const basePrice = 25; // Precio base, debería venir de la API
-    const vipMultiplier = 1.5;
+    // Intentar usar precios reales del backend si están disponibles
+    let basePrice = 4; // Precio real del backend para asientos normales
+    let vipPrice = 6;  // Precio real del backend para asientos VIP
     
-    const originalPrice = seat.type === 'VIP' ? basePrice * vipMultiplier : basePrice;
+    // Si tenemos datos de pricing del backend, usarlos
+    if (pricingData) {
+      basePrice = pricingData.normalSeat.basePrice;
+      vipPrice = pricingData.vipSeat.basePrice;
+    }
+    
+    const originalPrice = seat.type === 'VIP' ? vipPrice : basePrice;
     
     // Aplicar descuentos según el tipo de pasajero
     if (passenger && ['child', 'elderly', 'disabled'].includes(passenger.passengerType)) {
-      const discountedPrice = originalPrice * 0.5; // 50% de descuento
+      let discountedPrice = originalPrice * 0.5; // 50% de descuento por defecto
+      
+      // Si tenemos información de descuentos específicos del backend
+      if (pricingData) {
+        const seatPricing = seat.type === 'VIP' ? pricingData.vipSeat : pricingData.normalSeat;
+        
+        switch (passenger.passengerType) {
+          case 'child':
+            discountedPrice = seatPricing.discounts.CHILD;
+            break;
+          case 'elderly':
+            discountedPrice = seatPricing.discounts.SENIOR;
+            break;
+          case 'disabled':
+            discountedPrice = seatPricing.discounts.HANDICAPPED;
+            break;
+        }
+      }
+      
       return {
         original: originalPrice,
         discounted: discountedPrice
