@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../../common/constants/colors';
@@ -6,71 +7,91 @@ import FormPassenger from '../components/seat-details/form-passenger';
 import SeatInfo from '../components/seat-details/seat-info';
 import UploadDocs from '../components/seat-details/upload-docs';
 import { ValidationResult } from '../services/aws.service';
+import { BusInfo, RouteInfo } from '../services/seatService';
 
-// Datos estáticos de ejemplo
-const DEMO_SEATS = [
-  {
-    id: '1',
-    seatNumber: '12',
-    seatType: 'normal',
-    originalPrice: 25.00,
-  },
-  {
-    id: '2',
-    seatNumber: '14',
-    seatType: 'child',
-    originalPrice: 25.00,
-    discountedPrice: 12.50,
-  },
-  {
-    id: '3',
-    seatNumber: '16',
-    seatType: 'elderly',
-    originalPrice: 25.00,
-    discountedPrice: 12.50,
-  },
-  {
-    id: '4',
-    seatNumber: '18',
-    seatType: 'disabled',
-    originalPrice: 25.00,
-    discountedPrice: 12.50,
-  },
-];
+interface SelectedSeat {
+  id: number;
+  number: string;
+  type: 'VIP' | 'NORMAL';
+  location: 'ventana' | 'pasillo';
+}
+
+interface PassengerData {
+  seatId: number;
+  firstName: string;
+  lastName: string;
+  idNumber: string;
+  documentUri: string;
+  documentType: string;
+  documentName: string;
+  isValidated: boolean;
+  validationResult: ValidationResult | null;
+}
 
 export default function SeatDetailsScreen() {
-  const [passengers, setPassengers] = useState(
-    DEMO_SEATS.map(seat => ({
-      seatId: seat.id,
-      firstName: '',
-      lastName: '',
-      idNumber: '',
-      documentUri: '',
-      documentType: '',
-      documentName: '',
-      isValidated: false,
-      validationResult: null as ValidationResult | null,
-    }))
-  );
+  const params = useLocalSearchParams();
+  const { tripId, seats, busInfo, routeInfo } = params;
+  
+  const [selectedSeats, setSelectedSeats] = useState<SelectedSeat[]>([]);
+  const [busData, setBusData] = useState<BusInfo | null>(null);
+  const [routeData, setRouteData] = useState<RouteInfo | null>(null);
+  const [passengers, setPassengers] = useState<PassengerData[]>([]);
 
-  const handleChangeFirstName = (seatId: string, text: string) => {
+  useEffect(() => {
+    // Parsear los datos que vienen de la pantalla anterior
+    try {
+      if (seats) {
+        const parsedSeats: SelectedSeat[] = JSON.parse(seats as string);
+        setSelectedSeats(parsedSeats);
+        
+        // Inicializar datos de pasajeros
+        const initialPassengers: PassengerData[] = parsedSeats.map(seat => ({
+          seatId: seat.id,
+          firstName: '',
+          lastName: '',
+          idNumber: '',
+          documentUri: '',
+          documentType: '',
+          documentName: '',
+          isValidated: false,
+          validationResult: null,
+        }));
+        setPassengers(initialPassengers);
+      }
+      
+      if (busInfo) {
+        setBusData(JSON.parse(busInfo as string));
+      }
+      
+      if (routeInfo) {
+        setRouteData(JSON.parse(routeInfo as string));
+      }
+    } catch (error) {
+      console.error('Error parsing seat data:', error);
+      Alert.alert('Error', 'No se pudieron cargar los datos de los asientos');
+      router.back();
+    }
+  }, [seats, busInfo, routeInfo]);
+
+  const handleChangeFirstName = (seatId: number, text: string) => {
     setPassengers(
       passengers.map(p => (p.seatId === seatId ? { ...p, firstName: text } : p))
     );
   };
 
-  const handleChangeLastName = (seatId: string, text: string) => {
+  const handleChangeLastName = (seatId: number, text: string) => {
     setPassengers(
       passengers.map(p => (p.seatId === seatId ? { ...p, lastName: text } : p))
     );
   };
 
-  const handleChangeIdNumber = (seatId: string, text: string) => {
+  const handleChangeIdNumber = (seatId: number, text: string) => {
     setPassengers(
       passengers.map(p => (p.seatId === seatId ? { ...p, idNumber: text } : p))
     );
   };
-  const handleDocumentSelected = (seatId: string, uri: string, type: string, name: string) => {
+
+  const handleDocumentSelected = (seatId: number, uri: string, type: string, name: string) => {
     setPassengers(
       passengers.map(p => (
         p.seatId === seatId 
@@ -80,7 +101,7 @@ export default function SeatDetailsScreen() {
     );
   };
 
-  const handleValidationResult = (seatId: string, result: ValidationResult) => {
+  const handleValidationResult = (seatId: number, result: ValidationResult) => {
     setPassengers(
       passengers.map(p => (
         p.seatId === seatId 
@@ -106,18 +127,16 @@ export default function SeatDetailsScreen() {
   };
 
   const handleContinue = () => {
-    // Verificar que todos los asientos con descuento estén validados
-    const seatsWithDiscount = passengers.filter(p => {
-      const seat = DEMO_SEATS.find(s => s.id === p.seatId);
-      return seat && seat.seatType !== 'normal';
+    // Verificar que todos los asientos VIP estén validados si requieren validación
+    const invalidSeats = passengers.filter(p => {
+      const seat = selectedSeats.find(s => s.id === p.seatId);
+      return seat && seat.type === 'VIP' && !p.isValidated;
     });
-
-    const invalidSeats = seatsWithDiscount.filter(p => !p.isValidated);
     
     if (invalidSeats.length > 0) {
       Alert.alert(
         'Validación pendiente',
-        'Debe validar los documentos de todos los asientos con descuento antes de continuar.',
+        'Debe validar los documentos de todos los asientos VIP antes de continuar.',
         [{ text: 'OK' }]
       );
       return;
@@ -137,9 +156,43 @@ export default function SeatDetailsScreen() {
       return;
     }
 
-    // Aquí iría la lógica para enviar los datos al backend
-    console.log('Datos de pasajeros validados:', passengers);
+    // Navegar a la confirmación de compra
+    router.push({
+      pathname: '/(extras)/purchase-confirmation',
+      params: {
+        tripId: tripId as string,
+        seats: JSON.stringify(selectedSeats),
+        passengers: JSON.stringify(passengers),
+        busInfo: JSON.stringify(busData),
+        routeInfo: JSON.stringify(routeData)
+      }
+    });
   };
+
+  const calculatePrice = (seat: SelectedSeat): { original: number; discounted?: number } => {
+    const basePrice = 25; // Precio base, debería venir de la API
+    const vipMultiplier = 1.5;
+    
+    const originalPrice = seat.type === 'VIP' ? basePrice * vipMultiplier : basePrice;
+    
+    return {
+      original: originalPrice,
+      // Aquí se podrían aplicar descuentos según validaciones
+    };
+  };
+
+  if (selectedSeats.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <Text style={styles.errorText}>No se encontraron asientos seleccionados</Text>
+          <TouchableOpacity style={styles.continueButton} onPress={() => router.back()}>
+            <Text style={styles.continueButtonText}>Volver</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
@@ -149,30 +202,44 @@ export default function SeatDetailsScreen() {
           Complete la información para cada uno de los asientos seleccionados
         </Text>
 
-        {DEMO_SEATS.map((seat) => {
+        {/* Información del viaje */}
+        {routeData && (
+          <View style={styles.tripInfoContainer}>
+            <Text style={styles.tripInfoText}>
+              {routeData.frequency.originCity} → {routeData.frequency.destinationCity}
+            </Text>
+            <Text style={styles.tripInfoSubtext}>
+              {routeData.date} | {routeData.frequency.departureTime}
+            </Text>
+          </View>
+        )}
+
+        {selectedSeats.map((seat) => {
           const passenger = passengers.find(p => p.seatId === seat.id);
-          const needsDocument = seat.seatType !== 'normal';
+          const pricing = calculatePrice(seat);
+          const needsValidation = seat.type === 'VIP'; // Solo los VIP requieren validación por ahora
 
           return (
             <View key={seat.id} style={styles.seatSection}>
               <SeatInfo
-                seatNumber={seat.seatNumber}
-                seatType={seat.seatType as any}
-                originalPrice={seat.originalPrice}
-                discountedPrice={seat.discountedPrice}
+                seatNumber={seat.number}
+                seatType={seat.type.toLowerCase() as any}
+                originalPrice={pricing.original}
+                discountedPrice={pricing.discounted}
               />
               
               <FormPassenger
-                firstName={passenger?.firstName}
-                lastName={passenger?.lastName}
-                idNumber={passenger?.idNumber}
+                firstName={passenger?.firstName || ''}
+                lastName={passenger?.lastName || ''}
+                idNumber={passenger?.idNumber || ''}
                 onChangeFirstName={(text) => handleChangeFirstName(seat.id, text)}
                 onChangeLastName={(text) => handleChangeLastName(seat.id, text)}
                 onChangeIdNumber={(text) => handleChangeIdNumber(seat.id, text)}
               />
-                {needsDocument && (
+              
+              {needsValidation && (
                 <UploadDocs
-                  seatType={seat.seatType as any}
+                  seatType={seat.type.toLowerCase() as any}
                   firstName={passenger?.firstName || ''}
                   lastName={passenger?.lastName || ''}
                   onDocumentSelected={(uri, type, name) => 
@@ -188,7 +255,7 @@ export default function SeatDetailsScreen() {
         })}
 
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueButtonText}>Continuar</Text>
+          <Text style={styles.continueButtonText}>Continuar al Pago</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -214,6 +281,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textSecondary,
     marginBottom: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    color: Colors.danger,
+    textAlign: 'center',
+    marginTop: 32,
+  },
+  tripInfoContainer: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tripInfoText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  tripInfoSubtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
   },
   seatSection: {
     marginBottom: 24,

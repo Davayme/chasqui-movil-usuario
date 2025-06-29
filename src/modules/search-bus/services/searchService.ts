@@ -1,4 +1,4 @@
-import { API_URL, API_ENDPOINTS } from '../../../common/config/config';
+import { API_ENDPOINTS, API_URL } from '../../../common/config/config';
 // Interfaces para la respuesta del backend
 export interface City {
   id: number;
