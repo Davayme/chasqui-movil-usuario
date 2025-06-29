@@ -61,7 +61,7 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
     console.log('Setting today as default date:', today);
     setSelectedDate(today);
     setFormattedDate(formatDisplayDate(today));
-  }, []);
+  }, [today]);
 
   const handleSearch = () => {
     if (originCity && destinationCity && selectedDate) {
@@ -79,7 +79,7 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
             placeholder="Ciudad de origen"
             value={originCity?.name || ''}
             onSelectCity={(city: CityAutocomplete) => {
-              if (city.id) {
+              if (city.id && city.id > 0) {
                 setOriginCity(city);
               } else {
                 setOriginCity(null);
@@ -94,7 +94,7 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
             placeholder="Ciudad de destino"
             value={destinationCity?.name || ''}
             onSelectCity={(city: CityAutocomplete) => {
-              if (city.id) {
+              if (city.id && city.id > 0) {
                 setDestinationCity(city);
               } else {
                 setDestinationCity(null);

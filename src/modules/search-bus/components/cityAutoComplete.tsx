@@ -30,33 +30,38 @@ export default function CityAutoCompleteComponent({
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<CityAutocomplete[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isManualInput, setIsManualInput] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const containerRef = useRef<View>(null);
 
+  // Solo actualizar query cuando value cambia desde el componente padre (no por input manual)
   useEffect(() => {
-    // Actualizar el query cuando cambia el value desde fuera
-    if (value !== query && !showSuggestions) {
+    if (!isManualInput && value !== query) {
       setQuery(value);
     }
-  }, [value]);
+  }, [value, isManualInput, query]);
 
-  // Avoid suggestions being shown after a city is selected
+  // Resetear flag cuando se limpia el input desde fuera
   useEffect(() => {
-    if (value && value !== query) {
-      setQuery(value);
-      setShowSuggestions(false);
+    if (!value) {
+      setIsManualInput(false);
     }
   }, [value]);
 
   // Efecto para buscar ciudades cuando cambia el query
   useEffect(() => {
-    if (query.length >= 2) {
-      setSuggestions(searchCities(query));
-      setShowSuggestions(true);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
+    const searchCitiesAsync = async () => {
+      if (query.length >= 2) {
+        const results = await searchCities(query);
+        setSuggestions(results);
+        setShowSuggestions(true);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    };
+
+    searchCitiesAsync();
   }, [query]);
 
   // Efecto para cerrar sugerencias cuando se toca fuera o se oculta el teclado
@@ -73,7 +78,13 @@ export default function CityAutoCompleteComponent({
     };
   }, []);
 
+  const handleTextChange = (text: string) => {
+    setIsManualInput(true);
+    setQuery(text);
+  };
+
   const handleSelect = (city: CityAutocomplete) => {
+    setIsManualInput(false);
     setQuery(city.name);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -82,10 +93,11 @@ export default function CityAutoCompleteComponent({
   };
 
   const handleClear = () => {
+    setIsManualInput(false);
     setQuery('');
     setSuggestions([]);
     setShowSuggestions(false);
-    onSelectCity({ id: '', name: '', province: '' });
+    onSelectCity({ id: 0, name: '', province: '' });
     inputRef.current?.focus();
   };
 
@@ -107,7 +119,7 @@ export default function CityAutoCompleteComponent({
           style={styles.input}
           placeholder={placeholder}
           value={query}
-          onChangeText={setQuery}
+          onChangeText={handleTextChange}
           placeholderTextColor={Colors.textSecondary}
           onFocus={() => setShowSuggestions(query.length >= 2)}
           autoCapitalize="words"

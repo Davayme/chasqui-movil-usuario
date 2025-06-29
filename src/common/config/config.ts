@@ -17,8 +17,11 @@ export const API_ENDPOINTS = {
     PROFILE: '/users/profile',
     REGISTER: '/users/client',
   },
+  CITIES: {
+    GET_CITIES: '/cities',
+  },
   FRECUENCIES: {
-    GET_FRECUENCIES: '/frequencies/search-mock',
+    GET_FRECUENCIES: '/frequencies/search',
   },
   PAYMENTS: {
     CREATE_PAYMENT_INTENT: '/payments/create-payment-intent',
