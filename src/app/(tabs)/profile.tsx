@@ -1,9 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Header from '../../common/components/Header';
 import { Colors } from '../../common/constants/colors';
 import { useAuth } from '../../common/context/AuthContext';
 
@@ -17,10 +16,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
-      
-      <Header title="Mi Perfil" />
-      
-      <ScrollView style={styles.content}>
+      <View style={styles.content}>
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarText}>{firstInitial}</Text>
@@ -29,70 +25,12 @@ export default function ProfileScreen() {
           <Text style={styles.userEmail}>{user?.email || 'usuario@ejemplo.com'}</Text>
         </View>
         
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Información Personal</Text>
-          
-          <View style={styles.optionItem}>
-            <Ionicons name="person-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Editar Perfil</Text>
-              <Text style={styles.optionDescription}>Actualiza tu información personal</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </View>
-          
-          <View style={styles.optionItem}>
-            <Ionicons name="card-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Métodos de Pago</Text>
-              <Text style={styles.optionDescription}>Administra tus tarjetas y métodos de pago</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </View>
-        </View>
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferencias</Text>
-          
-          <View style={styles.optionItem}>
-            <Ionicons name="notifications-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Notificaciones</Text>
-              <Text style={styles.optionDescription}>Administra tus notificaciones</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </View>
-          
-          <View style={styles.optionItem}>
-            <Ionicons name="language-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Idioma</Text>
-              <Text style={styles.optionDescription}>Cambia el idioma de la aplicación</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </View>
-        </View>
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ayuda</Text>
-          
-          <View style={styles.optionItem}>
-            <Ionicons name="help-circle-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Centro de Ayuda</Text>
-              <Text style={styles.optionDescription}>Preguntas frecuentes y soporte</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </View>
-          
-          <View style={styles.optionItem}>
-            <Ionicons name="document-text-outline" size={24} color={Colors.primary} style={styles.optionIcon} />
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>Términos y Condiciones</Text>
-              <Text style={styles.optionDescription}>Política de privacidad y términos de uso</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </View>
+        <View style={styles.emptyStateContainer}>
+          <Ionicons name="person-outline" size={80} color={Colors.primary} />
+          <Text style={styles.emptyStateTitle}>Perfil de Usuario</Text>
+          <Text style={styles.emptyStateMessage}>
+            Bienvenido a tu perfil. Aquí podrás administrar tu información personal.
+          </Text>
         </View>
         
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
@@ -103,7 +41,7 @@ export default function ProfileScreen() {
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>Versión 1.0.0</Text>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -115,12 +53,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    padding: 20,
   },
   profileHeader: {
     alignItems: 'center',
     paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    marginBottom: 20,
   },
   avatarContainer: {
     width: 80,
@@ -146,42 +86,27 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 5,
   },
-  section: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
   },
-  sectionTitle: {
-    fontSize: 18,
+  emptyStateTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: Colors.textPrimary,
-    marginBottom: 15,
+    marginTop: 20,
+    marginBottom: 10,
   },
-  optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  optionIcon: {
-    marginRight: 15,
-  },
-  optionContent: {
-    flex: 1,
-  },
-  optionTitle: {
+  emptyStateMessage: {
     fontSize: 16,
-    color: Colors.textPrimary,
-    fontWeight: '500',
-  },
-  optionDescription: {
-    fontSize: 13,
     color: Colors.textSecondary,
-    marginTop: 2,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   logoutButton: {
     marginTop: 20,
-    marginHorizontal: 20,
     backgroundColor: Colors.danger,
     padding: 15,
     borderRadius: 8,
@@ -205,4 +130,4 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: 12,
   },
-}); 
+});

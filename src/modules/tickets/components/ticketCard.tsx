@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../../common/constants/colors';
 import { Ticket, TicketFilter } from '../services/data';
+import QRModal from './QRModal';
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -10,66 +11,98 @@ interface TicketCardProps {
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({ ticket, filter }) => {
+  const [qrModalVisible, setQrModalVisible] = useState(false);
+
+  const showQRModal = () => {
+    setQrModalVisible(true);
+  };
+
+  const hideQRModal = () => {
+    setQrModalVisible(false);
+  };
+
+  // Información para el nombre del archivo QR
+  const ticketInfo = `${ticket.origin}_${ticket.destination}_${ticket.departureDate.replace(/\s+/g, '_')}`;
+
   return (
-    <TouchableOpacity style={styles.ticketCard}>
-      <View style={styles.ticketHeader}>
-        <Text style={styles.orderNumber}>{ticket.orderNumber}</Text>
-        <View style={[
-          styles.statusBadge, 
-          filter === 'active' ? styles.activeBadge : styles.pastBadge
-        ]}>
-          <Text style={styles.statusText}>
-            {filter === 'active' ? 'Activo' : 'Pasado'}
-          </Text>
-        </View>
-      </View>
-      
-      <View style={styles.routeContainer}>
-        <View style={styles.locationContainer}>
-          <Text style={styles.locationText}>{ticket.origin}</Text>
-          <Ionicons name="arrow-forward" size={18} color={Colors.textSecondary} />
-          <Text style={styles.locationText}>{ticket.destination}</Text>
-        </View>
-      </View>
-      
-      <View style={styles.ticketInfo}>
-        <View style={styles.infoItem}>
-          <Ionicons name="calendar-outline" size={18} color={Colors.textSecondary} />
-          <Text style={styles.infoText}>{ticket.departureDate}</Text>
+    <>
+      <TouchableOpacity style={styles.ticketCard}>
+        <View style={styles.ticketHeader}>
+          <Text style={styles.orderNumber}>{ticket.orderNumber}</Text>
+          <View style={[
+            styles.statusBadge, 
+            filter === 'active' ? styles.activeBadge : styles.pastBadge
+          ]}>
+            <Text style={[
+              styles.statusText,
+              filter === 'active' ? styles.activeStatusText : styles.pastStatusText
+            ]}>
+              {filter === 'active' ? 'Activo' : 'Pasado'}
+            </Text>
+          </View>
         </View>
         
-        <View style={styles.infoItem}>
-          <Ionicons name="time-outline" size={18} color={Colors.textSecondary} />
-          <Text style={styles.infoText}>{ticket.departureTime}</Text>
-        </View>
-      </View>
-      
-      <View style={styles.ticketInfo}>
-        <View style={styles.infoItem}>
-          <Ionicons name="business-outline" size={18} color={Colors.textSecondary} />
-          <Text style={styles.infoText}>{ticket.company}</Text>
+        <View style={styles.routeContainer}>
+          <View style={styles.locationContainer}>
+            <Text style={styles.locationText}>{ticket.origin}</Text>
+            <Ionicons name="arrow-forward" size={18} color={Colors.textSecondary} />
+            <Text style={styles.locationText}>{ticket.destination}</Text>
+          </View>
         </View>
         
-        <View style={styles.infoItem}>
-          <Ionicons name="person-outline" size={18} color={Colors.textSecondary} />
-          <Text style={styles.infoText}>Asiento: {ticket.seat}</Text>
+        <View style={styles.ticketInfo}>
+          <View style={styles.infoItem}>
+            <Ionicons name="calendar-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.infoText}>{ticket.departureDate}</Text>
+          </View>
+          
+          <View style={styles.infoItem}>
+            <Ionicons name="time-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.infoText}>{ticket.departureTime}</Text>
+          </View>
         </View>
-      </View>
-      
-      <View style={styles.ticketActions}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="qr-code-outline" size={20} color="#fff" />
-          <Text style={styles.actionButtonText}>Ver QR</Text>
-        </TouchableOpacity>
         
-        {filter === 'active' && (
-          <TouchableOpacity style={[styles.actionButton, styles.actionButtonSecondary]}>
-            <Ionicons name="download-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonTextSecondary}>Descargar</Text>
+        <View style={styles.ticketInfo}>
+          <View style={styles.infoItem}>
+            <Ionicons name="business-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.infoText}>{ticket.company}</Text>
+          </View>
+          
+          <View style={styles.infoItem}>
+            <Ionicons name="person-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.infoText}>Asiento: {ticket.seat}</Text>
+          </View>
+        </View>
+        
+        <View style={styles.ticketActions}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={showQRModal}
+          >
+            <Ionicons name="qr-code-outline" size={20} color="#fff" />
+            <Text style={styles.actionButtonText}>Ver QR</Text>
           </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
+          
+          {filter === 'active' && (
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.actionButtonSecondary]}
+              onPress={showQRModal}
+            >
+              <Ionicons name="download-outline" size={20} color={Colors.primary} />
+              <Text style={styles.actionButtonTextSecondary}>Guardar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
+
+      {/* Modal para mostrar el código QR */}
+      <QRModal
+        visible={qrModalVisible}
+        onClose={hideQRModal}
+        ticketId={ticket.id}
+        ticketInfo={ticketInfo}
+      />
+    </>
   );
 };
 
@@ -110,7 +143,12 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  activeStatusText: {
     color: '#4CAF50',
+  },
+  pastStatusText: {
+    color: '#9E9E9E',
   },
   routeContainer: {
     marginBottom: 12,
