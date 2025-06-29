@@ -119,6 +119,13 @@ export default function SeatDetailsScreen() {
     );
     // Validar inmediatamente
     validatePassengerData(seatId, 'idNumber', text);
+    
+    // También revalidar otros pasajeros que puedan tener la misma cédula
+    passengers.forEach(p => {
+      if (p.seatId !== seatId && p.idNumber === text) {
+        validatePassengerData(p.seatId, 'idNumber', p.idNumber);
+      }
+    });
   };
 
   const handleDocumentSelected = (seatId: number, uri: string, type: string, name: string) => {
@@ -176,6 +183,42 @@ export default function SeatDetailsScreen() {
   };
 
   const handleContinue = () => {
+    // Primero, verificar validaciones en tiempo real para todos los pasajeros
+    let hasValidationErrors = false;
+    passengers.forEach(passenger => {
+      // Validar cada campo
+      const firstNameValid = validatePassengerData(passenger.seatId, 'firstName', passenger.firstName);
+      const lastNameValid = validatePassengerData(passenger.seatId, 'lastName', passenger.lastName);
+      const idNumberValid = validatePassengerData(passenger.seatId, 'idNumber', passenger.idNumber);
+      
+      if (!firstNameValid || !lastNameValid || !idNumberValid) {
+        hasValidationErrors = true;
+      }
+    });
+
+    // Verificar cédulas duplicadas globalmente
+    const idNumbers = passengers.map(p => p.idNumber.trim()).filter(id => id);
+    const duplicateIds = idNumbers.filter((id, index) => idNumbers.indexOf(id) !== index);
+    
+    if (duplicateIds.length > 0) {
+      hasValidationErrors = true;
+      Alert.alert(
+        'Cédulas duplicadas',
+        'No puede registrar la misma cédula para diferentes pasajeros. Por favor, verifique los números de cédula ingresados.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    if (hasValidationErrors) {
+      Alert.alert(
+        'Errores de validación',
+        'Por favor, corrija los errores en el formulario antes de continuar.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     // Verificar que todos los asientos con descuento estén validados
     const passengersNeedingValidation = passengers.filter(p => 
       ['child', 'elderly', 'disabled'].includes(p.passengerType) && !p.isValidated
@@ -225,6 +268,14 @@ export default function SeatDetailsScreen() {
     );
 
     if (hasValidationErrors) {
+      return false;
+    }
+
+    // Verificar cédulas duplicadas
+    const idNumbers = passengers.map(p => p.idNumber.trim()).filter(id => id);
+    const hasDuplicateIds = idNumbers.length !== new Set(idNumbers).size;
+
+    if (hasDuplicateIds) {
       return false;
     }
 

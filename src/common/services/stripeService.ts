@@ -29,51 +29,85 @@ export const useStripePayment = () => {
   const { user } = useAuth();
 
   /**
-   * Crea un payment intent en el backend
-   * @param amount Monto a cobrar en dólares (ej: 25.99)
+   * Crea un ticket y obtiene las claves de Stripe del backend
+   * @param ticketData Datos del ticket y pasajeros
    * @returns Datos necesarios para inicializar PaymentSheet
    */
-  const createPaymentIntent = async (amount: number) => {
+  const createTicketAndPaymentIntent = async (ticketData: {
+    buyerUserId: number;
+    routeSheetDetailId: number;
+    passengers: {
+      seatId: number;
+      passengerType: string;
+      firstName: string;
+      lastName: string;
+      idNumber: string;
+    }[];
+    paymentMethod: string;
+  }) => {
     try {
       const response = await fetch(`${API_URL}${API_ENDPOINTS.PAYMENTS.CREATE_PAYMENT_INTENT}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          amount,
-          userEmail: user?.email || 'usuario@ejemplo.com',
-          userId: user?.id || 1,
-        }),
+        body: JSON.stringify(ticketData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear el intent de pago');
+        throw new Error(errorData.message || 'Error al crear el ticket');
       }
 
       const data = await response.json();
+      console.log('Respuesta del backend para ticket:', data);
       return data;
     } catch (error: any) {
-      console.error('Error creando payment intent:', error);
+      console.error('Error creando ticket:', error);
       throw error;
     }
   };
 
   /**
-   * Procesa un pago usando PaymentSheet de Stripe
-   * @param amount Monto a cobrar en dólares (ej: 25.99)
+   * Procesa un pago creando primero un ticket en el backend
+   * @param ticketData Datos del ticket y pasajeros
    * @returns Promise que resuelve a true si el pago es exitoso
    */
-  const processPayment = async (amount: number): Promise<boolean> => {
+  const processPayment = async (ticketData: {
+    routeSheetDetailId: number;
+    passengers: {
+      seatId: number;
+      passengerType: string;
+      firstName: string;
+      lastName: string;
+      idNumber: string;
+    }[];
+  }): Promise<boolean> => {
     try {
-      // Crear el payment intent en el backend
+      if (!user?.id) {
+        Alert.alert('Error', 'Debe iniciar sesión para realizar una compra');
+        return false;
+      }
+
+      // Preparar datos para el backend
+      const paymentData = {
+        buyerUserId: user.id,
+        routeSheetDetailId: ticketData.routeSheetDetailId,
+        passengers: ticketData.passengers,
+        paymentMethod: 'stripe'
+      };
+
+      // Crear el ticket y obtener las claves de Stripe del backend
+      const backendResponse = await createTicketAndPaymentIntent(paymentData);
+      
       const {
-        paymentIntentClientSecret,
-        customerEphemeralKeySecret,
-        customerId,
-        publishableKey
-      } = await createPaymentIntent(amount);
+        stripeKeys: {
+          paymentIntentClientSecret,
+          customerEphemeralKeySecret,
+          customerId,
+          publishableKey
+        }
+      } = backendResponse;
 
       // Inicializar Stripe con la clave pública recibida del backend
       if (publishableKey) {

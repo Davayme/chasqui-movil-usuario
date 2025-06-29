@@ -25,7 +25,7 @@ export const API_ENDPOINTS = {
     GET_FREQUENCY_BY_ID: '/frequencies-buses/bus-seats/',
   },
   PAYMENTS: {
-    CREATE_PAYMENT_INTENT: '/payments/create-payment-intent',
+    CREATE_PAYMENT_INTENT: '/tickets/purchase',
   },
   QR: {
     GET_QR: '/qr/demo',

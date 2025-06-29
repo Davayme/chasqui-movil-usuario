@@ -137,6 +137,22 @@ export default function PurchaseConfirmationScreen() {
     return price.toFixed(2);
   };
 
+  // Función para mapear tipos de pasajero al formato del backend
+  const mapPassengerType = (type: string): string => {
+    switch (type) {
+      case 'normal':
+        return 'NORMAL';
+      case 'child':
+        return 'CHILD';
+      case 'elderly':
+        return 'SENIOR';
+      case 'disabled':
+        return 'HANDICAPPED';
+      default:
+        return 'NORMAL';
+    }
+  };
+
   const confirmAndPay = () => {
     const totalAmount = calculateTotalPrice();
     
@@ -162,16 +178,29 @@ export default function PurchaseConfirmationScreen() {
       return;
     }
 
-    const totalAmount = calculateTotalPrice();
-    if (totalAmount <= 0) {
-      Alert.alert("Error", "El monto total debe ser mayor a cero");
+    if (!tripId) {
+      Alert.alert("Error", "No se encontró información del viaje");
       return;
     }
 
     try {
       setIsProcessingPayment(true);
 
-      const success = await processPayment(totalAmount);
+      // Preparar datos para el backend
+      const ticketData = {
+        routeSheetDetailId: parseInt(tripId as string),
+        passengers: passengerData.map(passenger => ({
+          seatId: passenger.seatId,
+          passengerType: mapPassengerType(passenger.passengerType),
+          firstName: passenger.firstName,
+          lastName: passenger.lastName,
+          idNumber: passenger.idNumber
+        }))
+      };
+
+      console.log('Enviando datos del ticket:', ticketData);
+
+      const success = await processPayment(ticketData);
 
       if (success) {
         Alert.alert(
