@@ -21,7 +21,9 @@ export default function SeatSelectionScreen() {
     const loadBusSeats = async () => {
       setIsLoading(true);
       try {
+        console.log('Cargando asientos para tripId (routeSheetDetailId):', tripId);
         const data = await fetchBusSeats(parseInt(tripId as string));
+        
         if (data) {
           setBusData(data);
           // Si hay pisos disponibles, establecer el primer piso como actual
@@ -29,7 +31,8 @@ export default function SeatSelectionScreen() {
             setCurrentFloor(data.seatsLayout[0].floor);
           }
         } else {
-          Alert.alert('Error', 'No se pudieron cargar los asientos del bus');
+          console.error('No se pudieron cargar los asientos con routeSheetDetailId:', tripId);
+          Alert.alert('Error', 'No se pudieron cargar los asientos del bus. Por favor, intente nuevamente.');
         }
       } catch (error) {
         console.error('Error al cargar asientos:', error);

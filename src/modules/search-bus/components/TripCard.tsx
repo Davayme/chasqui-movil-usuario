@@ -18,9 +18,14 @@ export default function TripCard({ trip }: TripCardProps) {
   
   // Función para navegar a los detalles del viaje
   const handleSelectTrip = () => {
+    // Usar routeSheetDetailId como ID principal, que es lo que espera el backend
+    const tripId = trip.routeSheetDetailId?.toString() || trip.frequency.id.toString();
+    
     router.push({
       pathname: '/(extras)/seat-selection',
-      params: { tripId: trip.routeSheetDetailId.toString() }
+      params: { 
+        tripId
+      }
     });
   };
 

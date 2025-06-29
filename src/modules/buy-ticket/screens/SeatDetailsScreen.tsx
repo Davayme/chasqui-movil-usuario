@@ -14,7 +14,7 @@ interface SelectedSeat {
   id: number;
   number: string;
   type: 'VIP' | 'NORMAL';
-  location: 'ventana' | 'pasillo';
+  location: 'WINDOW_LEFT' | 'WINDOW_RIGHT' | 'AISLE_LEFT' | 'AISLE_RIGHT' | 'MIDDLE';
 }
 
 interface PassengerData {
@@ -38,6 +38,27 @@ export default function SeatDetailsScreen() {
   const [routeData, setRouteData] = useState<RouteInfo | null>(null);
   const [pricingData, setPricingData] = useState<SeatPricing | null>(null);
   const [passengers, setPassengers] = useState<PassengerData[]>([]);
+  const [validationErrors, setValidationErrors] = useState<Record<number, {
+    firstName?: string;
+    lastName?: string;
+    idNumber?: string;
+  }>>({});
+
+  // Función helper para mapear la ubicación del asiento
+  const getSeatLocationDisplay = (location: string) => {
+    switch (location) {
+      case 'WINDOW_LEFT':
+      case 'WINDOW_RIGHT':
+        return { icon: 'car-outline', text: 'Ventana' };
+      case 'AISLE_LEFT':
+      case 'AISLE_RIGHT':
+        return { icon: 'walk-outline', text: 'Pasillo' };
+      case 'MIDDLE':
+        return { icon: 'ellipse-outline', text: 'Medio' };
+      default:
+        return { icon: 'help-outline', text: 'Desconocido' };
+    }
+  };
 
   useEffect(() => {
     // Parsear los datos que vienen de la pantalla anterior
@@ -80,18 +101,24 @@ export default function SeatDetailsScreen() {
     setPassengers(
       passengers.map(p => (p.seatId === seatId ? { ...p, firstName: text } : p))
     );
+    // Validar inmediatamente
+    validatePassengerData(seatId, 'firstName', text);
   };
 
   const handleChangeLastName = (seatId: number, text: string) => {
     setPassengers(
       passengers.map(p => (p.seatId === seatId ? { ...p, lastName: text } : p))
     );
+    // Validar inmediatamente
+    validatePassengerData(seatId, 'lastName', text);
   };
 
   const handleChangeIdNumber = (seatId: number, text: string) => {
     setPassengers(
       passengers.map(p => (p.seatId === seatId ? { ...p, idNumber: text } : p))
     );
+    // Validar inmediatamente
+    validatePassengerData(seatId, 'idNumber', text);
   };
 
   const handleDocumentSelected = (seatId: number, uri: string, type: string, name: string) => {
@@ -192,6 +219,15 @@ export default function SeatDetailsScreen() {
 
   // Función para verificar si todos los formularios están completos
   const isFormValid = () => {
+    // Verificar que no haya errores de validación
+    const hasValidationErrors = Object.values(validationErrors).some(errors => 
+      Object.values(errors).some(error => error !== undefined)
+    );
+
+    if (hasValidationErrors) {
+      return false;
+    }
+
     // Verificar que todos los pasajeros tengan información completa
     const allFieldsComplete = passengers.every(p => 
       p.firstName.trim() && p.lastName.trim() && p.idNumber.trim()
@@ -250,6 +286,69 @@ export default function SeatDetailsScreen() {
     };
   };
 
+  // Funciones de validación
+  const validateName = (name: string, fieldName: string): string | undefined => {
+    if (!name.trim()) {
+      return `${fieldName} es requerido`;
+    }
+    if (name.trim().length < 2) {
+      return `${fieldName} debe tener al menos 2 caracteres`;
+    }
+    if (name.trim().length > 50) {
+      return `${fieldName} no debe exceder 50 caracteres`;
+    }
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(name.trim())) {
+      return `${fieldName} solo puede contener letras y espacios`;
+    }
+    // Evitar nombres que son solo espacios o caracteres repetidos
+    if (/^(.)\1+$/.test(name.trim().replace(/\s/g, ''))) {
+      return `${fieldName} no puede ser caracteres repetidos`;
+    }
+    return undefined;
+  };
+
+  const validateIdNumber = (idNumber: string, currentSeatId: number): string | undefined => {
+    if (!idNumber.trim()) {
+      return 'Número de cédula es requerido';
+    }
+    if (!/^\d{10}$/.test(idNumber)) {
+      return 'La cédula debe tener exactamente 10 dígitos';
+    }
+    // Validar si ya existe esa cédula en otros pasajeros (excluir el actual)
+    const existingPassenger = passengers.find(p => p.idNumber === idNumber && p.seatId !== currentSeatId);
+    if (existingPassenger) {
+      const existingSeat = selectedSeats.find(s => s.id === existingPassenger.seatId);
+      return `Esta cédula ya está registrada para el asiento ${existingSeat?.number || 'otro asiento'}`;
+    }
+    return undefined;
+  };
+
+  const validatePassengerData = (seatId: number, field: string, value: string) => {
+    let error: string | undefined;
+    
+    switch (field) {
+      case 'firstName':
+        error = validateName(value, 'Nombre');
+        break;
+      case 'lastName':
+        error = validateName(value, 'Apellido');
+        break;
+      case 'idNumber':
+        error = validateIdNumber(value, seatId);
+        break;
+    }
+    
+    setValidationErrors(prev => ({
+      ...prev,
+      [seatId]: {
+        ...prev[seatId],
+        [field]: error
+      }
+    }));
+    
+    return !error;
+  };
+
   if (selectedSeats.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -303,12 +402,12 @@ export default function SeatDetailsScreen() {
                     )}
                     <View style={styles.locationTag}>
                       <Ionicons 
-                        name={seat.location === 'ventana' ? 'car-outline' : 'walk-outline'} 
+                        name={getSeatLocationDisplay(seat.location).icon as any} 
                         size={14} 
                         color={Colors.textSecondary} 
                       />
                       <Text style={styles.locationText}>
-                        {seat.location === 'ventana' ? 'Ventana' : 'Pasillo'}
+                        {getSeatLocationDisplay(seat.location).text}
                       </Text>
                     </View>
                   </View>
@@ -344,6 +443,7 @@ export default function SeatDetailsScreen() {
                   onChangeFirstName={(text) => handleChangeFirstName(seat.id, text)}
                   onChangeLastName={(text) => handleChangeLastName(seat.id, text)}
                   onChangeIdNumber={(text) => handleChangeIdNumber(seat.id, text)}
+                  errors={validationErrors[seat.id] || {}}
                 />
               </View>
               

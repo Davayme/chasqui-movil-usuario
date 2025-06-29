@@ -29,6 +29,23 @@ export default function PurchaseConfirmationScreen() {
   // Usar el hook de Stripe para procesar pagos
   const { processPayment } = useStripePayment();
 
+  // Helper function para mostrar la ubicación del asiento de forma consistente
+  const getSeatLocationDisplay = (location: string) => {
+    switch (location?.toLowerCase()) {
+      case 'window':
+      case 'ventana':
+        return 'Ventana';
+      case 'aisle':
+      case 'pasillo':
+        return 'Pasillo';
+      case 'middle':
+      case 'medio':
+        return 'Medio';
+      default:
+        return location || 'N/A';
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -72,8 +89,8 @@ export default function PurchaseConfirmationScreen() {
     
     // Si tenemos datos de pricing del backend, usarlos
     if (pricingData) {
-      basePrice = pricingData.normalSeat.basePrice;
-      vipPrice = pricingData.vipSeat.basePrice;
+      basePrice = pricingData.normalSeat?.basePrice || basePrice;
+      vipPrice = pricingData.vipSeat?.basePrice || vipPrice;
     }
     
     let total = 0;
@@ -90,16 +107,18 @@ export default function PurchaseConfirmationScreen() {
         if (pricingData) {
           const seatPricing = seat.type === 'VIP' ? pricingData.vipSeat : pricingData.normalSeat;
           
-          switch (passenger.passengerType) {
-            case 'child':
-              discountedPrice = seatPricing.discounts.CHILD;
-              break;
-            case 'elderly':
-              discountedPrice = seatPricing.discounts.SENIOR;
-              break;
-            case 'disabled':
-              discountedPrice = seatPricing.discounts.HANDICAPPED;
-              break;
+          if (seatPricing?.discounts) {
+            switch (passenger.passengerType) {
+              case 'child':
+                discountedPrice = seatPricing.discounts.CHILD || discountedPrice;
+                break;
+              case 'elderly':
+                discountedPrice = seatPricing.discounts.SENIOR || discountedPrice;
+                break;
+              case 'disabled':
+                discountedPrice = seatPricing.discounts.HANDICAPPED || discountedPrice;
+                break;
+            }
           }
         }
         
@@ -109,25 +128,74 @@ export default function PurchaseConfirmationScreen() {
       }
     });
     
-    return total;
+    // Redondear a 2 decimales
+    return Math.round(total * 100) / 100;
+  };
+
+  // Función para formatear precios
+  const formatPrice = (price: number) => {
+    return price.toFixed(2);
+  };
+
+  const confirmAndPay = () => {
+    const totalAmount = calculateTotalPrice();
+    
+    Alert.alert(
+      "Confirmar compra",
+      `¿Está seguro que desea proceder con el pago de $${formatPrice(totalAmount)}?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Confirmar pago",
+          onPress: handlePayWithStripe
+        }
+      ]
+    );
   };
 
   const handlePayWithStripe = async () => {
-    if (!selectedSeats.length || !passengerData.length) return;
+    if (!selectedSeats.length || !passengerData.length) {
+      Alert.alert("Error", "No hay asientos o pasajeros seleccionados");
+      return;
+    }
+
+    const totalAmount = calculateTotalPrice();
+    if (totalAmount <= 0) {
+      Alert.alert("Error", "El monto total debe ser mayor a cero");
+      return;
+    }
 
     try {
       setIsProcessingPayment(true);
 
-      const totalAmount = calculateTotalPrice();
       const success = await processPayment(totalAmount);
 
       if (success) {
-        // Navegar a la pantalla de boletos
-        router.push("/(tabs)/tickets");
+        Alert.alert(
+          "¡Pago exitoso!",
+          "Su compra se ha procesado correctamente. Puede ver sus boletos en la sección de Boletos.",
+          [
+            {
+              text: "Ver mis boletos",
+              onPress: () => router.push("/(tabs)/tickets")
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Pago cancelado",
+          "El pago fue cancelado o no se pudo completar"
+        );
       }
     } catch (error) {
       console.error("Error al procesar el pago:", error);
-      Alert.alert("Error", "No se pudo procesar el pago");
+      Alert.alert(
+        "Error en el pago",
+        "No se pudo procesar el pago. Por favor, intente nuevamente."
+      );
     } finally {
       setIsProcessingPayment(false);
     }
@@ -199,8 +267,8 @@ export default function PurchaseConfirmationScreen() {
             let vipPrice = 6;  // Precio real para asientos VIP
             
             if (pricingData) {
-              basePrice = pricingData.normalSeat.basePrice;
-              vipPrice = pricingData.vipSeat.basePrice;
+              basePrice = pricingData.normalSeat?.basePrice || basePrice;
+              vipPrice = pricingData.vipSeat?.basePrice || vipPrice;
             }
             
             const originalPrice = seat.type === 'VIP' ? vipPrice : basePrice;
@@ -214,16 +282,18 @@ export default function PurchaseConfirmationScreen() {
               if (pricingData) {
                 const seatPricing = seat.type === 'VIP' ? pricingData.vipSeat : pricingData.normalSeat;
                 
-                switch (passenger.passengerType) {
-                  case 'child':
-                    finalPrice = seatPricing.discounts.CHILD;
-                    break;
-                  case 'elderly':
-                    finalPrice = seatPricing.discounts.SENIOR;
-                    break;
-                  case 'disabled':
-                    finalPrice = seatPricing.discounts.HANDICAPPED;
-                    break;
+                if (seatPricing?.discounts) {
+                  switch (passenger.passengerType) {
+                    case 'child':
+                      finalPrice = seatPricing.discounts.CHILD || finalPrice;
+                      break;
+                    case 'elderly':
+                      finalPrice = seatPricing.discounts.SENIOR || finalPrice;
+                      break;
+                    case 'disabled':
+                      finalPrice = seatPricing.discounts.HANDICAPPED || finalPrice;
+                      break;
+                  }
                 }
               }
             }
@@ -234,10 +304,10 @@ export default function PurchaseConfirmationScreen() {
                   <View>
                     <Text style={styles.seatNumber}>Asiento {seat.number}</Text>
                     <Text style={styles.seatType}>
-                      {seat.type === 'VIP' ? 'VIP' : 'Normal'} • {seat.location === 'ventana' ? 'Ventana' : 'Pasillo'}
+                      {seat.type === 'VIP' ? 'VIP' : 'Normal'} • {getSeatLocationDisplay(seat.location)}
                     </Text>
                   </View>
-                  <Text style={styles.seatPrice}>${finalPrice}</Text>
+                  <Text style={styles.seatPrice}>${formatPrice(finalPrice)}</Text>
                 </View>
                 
                 {passenger && (
@@ -266,12 +336,12 @@ export default function PurchaseConfirmationScreen() {
           <View style={styles.costCard}>
             <View style={styles.costRow}>
               <Text style={styles.costLabel}>Subtotal ({selectedSeats.length} asientos)</Text>
-              <Text style={styles.costValue}>${calculateTotalPrice()}</Text>
+              <Text style={styles.costValue}>${formatPrice(calculateTotalPrice())}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.costRow}>
               <Text style={styles.totalLabel}>Total a Pagar</Text>
-              <Text style={styles.totalValue}>${calculateTotalPrice()}</Text>
+              <Text style={styles.totalValue}>${formatPrice(calculateTotalPrice())}</Text>
             </View>
           </View>
         </View>
@@ -281,7 +351,7 @@ export default function PurchaseConfirmationScreen() {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.payButton}
-          onPress={handlePayWithStripe}
+          onPress={confirmAndPay}
           disabled={isProcessingPayment}
         >
           {isProcessingPayment ? (
@@ -294,7 +364,7 @@ export default function PurchaseConfirmationScreen() {
                 color="#fff"
                 style={styles.payButtonIcon}
               />
-              <Text style={styles.payButtonText}>Pagar ${calculateTotalPrice()}</Text>
+              <Text style={styles.payButtonText}>Pagar ${formatPrice(calculateTotalPrice())}</Text>
             </>
           )}
         </TouchableOpacity>

@@ -2,7 +2,7 @@ import { Colors } from '@/src/common/constants/colors';
 import { useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NoResults from '../components/NoResults';
 import ResultCount from '../components/ResultCount';
@@ -19,12 +19,14 @@ export default function SearchResultsScreen() {
   const [trips, setTrips] = useState<TripSearchResult[]>([]);
   const [filteredTrips, setFilteredTrips] = useState<TripSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Cargar los resultados de búsqueda
   useEffect(() => {
     console.log('SearchResultsScreen mounted');
     const loadTrips = async () => {
       setIsLoading(true);
+      setError(null);
       try {
         // Simular tiempo de carga
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -41,6 +43,7 @@ export default function SearchResultsScreen() {
         setFilteredTrips(results);
       } catch (error) {
         console.error('Error al cargar viajes:', error);
+        setError('No se pudieron cargar los viajes disponibles. Por favor, intente nuevamente.');
       } finally {
         setIsLoading(false);
       }
@@ -137,6 +140,17 @@ export default function SearchResultsScreen() {
       </SafeAreaView>
     );
   }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <StatusBar style="light" />
+        <View style={styles.loadingContent}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
   
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -151,7 +165,7 @@ export default function SearchResultsScreen() {
         <FlatList
           data={filteredTrips}
           renderItem={({ item }) => <TripCard trip={item} />}
-          keyExtractor={item => item.routeSheetDetailId.toString()}
+          keyExtractor={(item) => item.routeSheetDetailId.toString()}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />
@@ -187,5 +201,11 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
+  },
+  errorText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginHorizontal: 20,
   },
 });
