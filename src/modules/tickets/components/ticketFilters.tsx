@@ -1,13 +1,15 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../../common/constants/colors';
-import { TicketFilter } from '../services/data';
+import { TicketFilter } from '../services/ticket-service';
 
 interface TicketFiltersProps {
   filter: TicketFilter;
   onFilterChange: (filter: TicketFilter) => void;
+  ticketCount?: number;
+  totalTickets?: number;
 }
 
-const TicketFilters: React.FC<TicketFiltersProps> = ({ filter, onFilterChange }) => {
+const TicketFilters: React.FC<TicketFiltersProps> = ({ filter, onFilterChange, ticketCount, totalTickets }) => {
   return (
     <View style={styles.filterContainer}>
       <TouchableOpacity 
@@ -17,6 +19,9 @@ const TicketFilters: React.FC<TicketFiltersProps> = ({ filter, onFilterChange })
         <Text style={[styles.filterText, filter === 'active' && styles.filterTextActive]}>
           Boletos Activos
         </Text>
+        {filter === 'active' && ticketCount !== undefined && (
+          <Text style={styles.countText}>({ticketCount})</Text>
+        )}
       </TouchableOpacity>
       
       <TouchableOpacity 
@@ -26,6 +31,9 @@ const TicketFilters: React.FC<TicketFiltersProps> = ({ filter, onFilterChange })
         <Text style={[styles.filterText, filter === 'past' && styles.filterTextActive]}>
           Boletos Pasados
         </Text>
+        {filter === 'past' && ticketCount !== undefined && (
+          <Text style={styles.countText}>({ticketCount})</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -57,6 +65,11 @@ const styles = StyleSheet.create({
   filterTextActive: {
     color: Colors.primary,
     fontWeight: 'bold',
+  },
+  countText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
 });
 

@@ -30,6 +30,10 @@ export const API_ENDPOINTS = {
   QR: {
     GET_QR: '/qr/demo',
   },
+  TICKETS: {
+    GET_TICKETS_HISTORY: '/tickets-history/user/',
+    GENERATE_QR: '/tickets-history/ticket/',
+  },
   AWS: {
     VALIDATE_DOCUMENT: '/aws/validate-document',
   },

@@ -2,11 +2,35 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../../common/constants/colors';
-import { Ticket, TicketFilter } from '../services/data';
+import { TicketFilter } from '../services/ticket-service';
 import QRModal from './QRModal';
 
+interface UITicket {
+  id: string;
+  orderNumber: string;
+  origin: string;
+  destination: string;
+  departureDate: string;
+  departureTime: string;
+  company: string;
+  seats: string;
+  price: number;
+  status: string;
+  statusText: string;
+  passengerCount: number;
+  qrCode?: string;
+  qrBase64?: string;
+  ticketId: number;
+  passengers: {
+    name: string;
+    seat: string;
+    type: string;
+    price: number;
+  }[];
+}
+
 interface TicketCardProps {
-  ticket: Ticket;
+  ticket: UITicket;
   filter: TicketFilter;
 }
 
@@ -37,7 +61,7 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, filter }) => {
               styles.statusText,
               filter === 'active' ? styles.activeStatusText : styles.pastStatusText
             ]}>
-              {filter === 'active' ? 'Activo' : 'Pasado'}
+              {ticket.statusText || (filter === 'active' ? 'Activo' : 'Pasado')}
             </Text>
           </View>
         </View>
@@ -70,7 +94,20 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, filter }) => {
           
           <View style={styles.infoItem}>
             <Ionicons name="person-outline" size={18} color={Colors.textSecondary} />
-            <Text style={styles.infoText}>Asiento: {ticket.seat}</Text>
+            <Text style={styles.infoText}>{ticket.seats}</Text>
+          </View>
+        </View>
+
+        {/* Mostrar información de precio */}
+        <View style={styles.ticketInfo}>
+          <View style={styles.infoItem}>
+            <Ionicons name="cash-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.infoText}>Total: ${ticket.price.toLocaleString()}</Text>
+          </View>
+          
+          <View style={styles.infoItem}>
+            <Ionicons name="people-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.infoText}>{ticket.passengerCount} pasajero(s)</Text>
           </View>
         </View>
         
@@ -99,8 +136,9 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, filter }) => {
       <QRModal
         visible={qrModalVisible}
         onClose={hideQRModal}
-        ticketId={ticket.id}
+        ticketId={ticket.ticketId.toString()}
         ticketInfo={ticketInfo}
+        qrBase64={ticket.qrBase64}
       />
     </>
   );

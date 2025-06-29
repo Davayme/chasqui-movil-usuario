@@ -13,20 +13,22 @@ import {
 import ViewShot from 'react-native-view-shot';
 import { showToast } from '../../../common/components/Toast';
 import { Colors } from '../../../common/constants/colors';
-import { getMockTicketQR, getTicketQR } from '../services/qrService';
+import { getMockTicketQR, getTicketQR } from '../services/ticket-service';
 
 interface QRModalProps {
   visible: boolean;
   onClose: () => void;
   ticketId: string;
   ticketInfo: string;
+  qrBase64?: string; // QR ya disponible del backend
 }
 
 const QRModal: React.FC<QRModalProps> = ({ 
   visible, 
   onClose, 
   ticketId, 
-  ticketInfo 
+  ticketInfo,
+  qrBase64
 }) => {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +42,35 @@ const QRModal: React.FC<QRModalProps> = ({
   const date = ticketParts.slice(2).join(' ').replace(/_/g, ' ') || '';
 
   useEffect(() => {
+    const loadQRCode = async () => {
+      setLoading(true);
+      try {
+        // Si ya tenemos el QR en base64, usarlo directamente
+        if (qrBase64) {
+          console.log('Usando QR base64 del ticket');
+          setQrCode(qrBase64);
+          setLoading(false);
+          return;
+        }
+        
+        // Si no, intentar obtener el QR del servidor
+        console.log('Obteniendo QR del servidor para ticket:', ticketId);
+        const qrData = await getTicketQR(parseInt(ticketId));
+        setQrCode(qrData);
+      } catch (error) {
+        console.error('Error al cargar QR:', error);
+        // Usar un QR de prueba en caso de error
+        setQrCode(getMockTicketQR(ticketId));
+        showToast({
+          type: 'warning',
+          title: 'Usando QR de prueba',
+          message: 'No se pudo conectar al servidor'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (visible) {
       loadQRCode();
     } else {
@@ -47,27 +78,7 @@ const QRModal: React.FC<QRModalProps> = ({
       setQrCode(null);
       setLoading(true);
     }
-  }, [visible, ticketId]);
-
-  const loadQRCode = async () => {
-    setLoading(true);
-    try {
-      // Intentar obtener el QR del servidor
-      const qrData = await getTicketQR(ticketId);
-      setQrCode(qrData);
-    } catch (error) {
-      console.error('Error al cargar QR:', error);
-      // Usar un QR de prueba en caso de error
-      setQrCode(getMockTicketQR(ticketId));
-      showToast({
-        type: 'warning',
-        title: 'Usando QR de prueba',
-        message: 'No se pudo conectar al servidor'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [visible, ticketId, qrBase64]);
 
   const handleSaveQR = async () => {
     setSaving(true);

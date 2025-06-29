@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../../../common/constants/colors';
-import { TicketFilter } from '../services/data';
+import { TicketFilter } from '../services/ticket-service';
 
 interface EmptyListTicketProps {
   filter: TicketFilter;
