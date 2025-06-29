@@ -1,7 +1,5 @@
 import { Colors } from "@/src/common/constants/colors";
 import { useStripePayment } from "@/src/common/services/stripeService";
-import { TicketPreview } from "@/src/modules/search-bus/services/interfaces";
-import { generateTicketPreview } from "@/src/modules/search-bus/services/mockData";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -16,65 +14,86 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CostSummary from "../components/cost-summary";
-import SeatDetails from "../components/seat-details";
-import TripSummary from "../components/trip-summary";
 
 export default function PurchaseConfirmationScreen() {
   const params = useLocalSearchParams();
-  const { tripId, seats } = params;
+  const { tripId, seats, passengers, busInfo, routeInfo } = params;
 
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [ticketData, setTicketData] = useState<TicketPreview | null>(null);
+  const [selectedSeats, setSelectedSeats] = useState<any[]>([]);
+  const [passengerData, setPassengerData] = useState<any[]>([]);
+  const [busData, setBusData] = useState<any>(null);
+  const [routeData, setRouteData] = useState<any>(null);
 
   // Usar el hook de Stripe para procesar pagos
   const { processPayment } = useStripePayment();
 
   useEffect(() => {
-    const loadTicketData = async () => {
+    const loadData = async () => {
       setIsLoading(true);
       try {
-        // Simular tiempo de carga
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Convertir los IDs de asientos de string a número
-        const seatIds = (seats as string).split(",").map((id) => parseInt(id));
-
-        // Para este ejemplo, asumimos que todos los pasajeros son adultos (tipo 'normal')
-        const passengerTypes = seatIds.map((seatId) => ({
-          seatId,
-          type: "normal",
-        }));
-
-        // Generar la vista previa del boleto
-        const preview = generateTicketPreview(
-          parseInt(tripId as string),
-          seatIds,
-          1, // userId (hardcoded por ahora)
-          passengerTypes
-        );
-
-        setTicketData(preview);
+        // Parsear los datos que vienen de la pantalla anterior
+        if (seats) {
+          const parsedSeats = JSON.parse(seats as string);
+          setSelectedSeats(parsedSeats);
+        }
+        
+        if (passengers) {
+          const parsedPassengers = JSON.parse(passengers as string);
+          setPassengerData(parsedPassengers);
+        }
+        
+        if (busInfo) {
+          setBusData(JSON.parse(busInfo as string));
+        }
+        
+        if (routeInfo) {
+          setRouteData(JSON.parse(routeInfo as string));
+        }
       } catch (error) {
-        console.error("Error al cargar datos del boleto:", error);
-        Alert.alert("Error", "No se pudieron cargar los datos del boleto");
+        console.error("Error al cargar datos:", error);
+        Alert.alert("Error", "No se pudieron cargar los datos de la compra");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadTicketData();
-  }, [tripId, seats]);
+    loadData();
+  }, [tripId, seats, passengers, busInfo, routeInfo]);
+
+  // Función para calcular el precio total
+  const calculateTotalPrice = () => {
+    if (!selectedSeats.length || !passengerData.length) return 0;
+    
+    const basePrice = 25; // Precio base
+    const vipMultiplier = 1.5;
+    
+    let total = 0;
+    
+    selectedSeats.forEach(seat => {
+      const passenger = passengerData.find(p => p.seatId === seat.id);
+      const originalPrice = seat.type === 'VIP' ? basePrice * vipMultiplier : basePrice;
+      
+      // Aplicar descuentos según el tipo de pasajero
+      if (passenger && ['child', 'elderly', 'disabled'].includes(passenger.passengerType)) {
+        total += originalPrice * 0.5; // 50% de descuento
+      } else {
+        total += originalPrice;
+      }
+    });
+    
+    return total;
+  };
 
   const handlePayWithStripe = async () => {
-    if (!ticketData) return;
+    if (!selectedSeats.length || !passengerData.length) return;
 
     try {
       setIsProcessingPayment(true);
 
-      // Pasar el monto directamente (ya no necesitamos convertirlo a centavos)
-      const success = await processPayment(ticketData.pricing.grandTotal);
+      const totalAmount = calculateTotalPrice();
+      const success = await processPayment(totalAmount);
 
       if (success) {
         // Navegar a la pantalla de boletos
@@ -99,7 +118,7 @@ export default function PurchaseConfirmationScreen() {
     );
   }
 
-  if (!ticketData) {
+  if (!selectedSeats.length || !passengerData.length || !routeData) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar style="light" />
@@ -110,7 +129,7 @@ export default function PurchaseConfirmationScreen() {
             color={Colors.danger}
           />
           <Text style={styles.errorText}>
-            No se pudieron cargar los datos del boleto
+            No se pudieron cargar los datos de la compra
           </Text>
           <TouchableOpacity
             style={styles.returnButton}
@@ -127,9 +146,82 @@ export default function PurchaseConfirmationScreen() {
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       <StatusBar style="light" />
       <ScrollView style={styles.content}>
-        <TripSummary tripInfo={ticketData.tripInfo} />
-        <SeatDetails seats={ticketData.seats} />
-        <CostSummary pricing={ticketData.pricing} />
+        
+        {/* Resumen del viaje */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Resumen del Viaje</Text>
+          <View style={styles.tripCard}>
+            <View style={styles.routeContainer}>
+              <Text style={styles.routeText}>
+                {routeData.frequency.originCity} → {routeData.frequency.destinationCity}
+              </Text>
+              <Text style={styles.routeSubtext}>
+                {routeData.date} | {routeData.frequency.departureTime}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Detalles de asientos y pasajeros */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Detalles de Asientos</Text>
+          {selectedSeats.map((seat, index) => {
+            const passenger = passengerData.find(p => p.seatId === seat.id);
+            const basePrice = 25;
+            const vipMultiplier = 1.5;
+            const originalPrice = seat.type === 'VIP' ? basePrice * vipMultiplier : basePrice;
+            const finalPrice = passenger && ['child', 'elderly', 'disabled'].includes(passenger.passengerType) 
+              ? originalPrice * 0.5 
+              : originalPrice;
+
+            return (
+              <View key={`seat-${seat.id}-${index}`} style={styles.seatCard}>
+                <View style={styles.seatHeader}>
+                  <View>
+                    <Text style={styles.seatNumber}>Asiento {seat.number}</Text>
+                    <Text style={styles.seatType}>
+                      {seat.type === 'VIP' ? 'VIP' : 'Normal'} • {seat.location === 'ventana' ? 'Ventana' : 'Pasillo'}
+                    </Text>
+                  </View>
+                  <Text style={styles.seatPrice}>${finalPrice}</Text>
+                </View>
+                
+                {passenger && (
+                  <View style={styles.passengerInfo}>
+                    <Text style={styles.passengerName}>
+                      {passenger.firstName} {passenger.lastName}
+                    </Text>
+                    <Text style={styles.passengerDetails}>
+                      Cédula: {passenger.idNumber} • Tipo: {
+                        passenger.passengerType === 'normal' ? 'Adulto' :
+                        passenger.passengerType === 'child' ? 'Menor de edad' :
+                        passenger.passengerType === 'elderly' ? 'Tercera edad' :
+                        'Persona con discapacidad'
+                      }
+                    </Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Resumen de costos */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Resumen de Costos</Text>
+          <View style={styles.costCard}>
+            <View style={styles.costRow}>
+              <Text style={styles.costLabel}>Subtotal ({selectedSeats.length} asientos)</Text>
+              <Text style={styles.costValue}>${calculateTotalPrice()}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.costRow}>
+              <Text style={styles.totalLabel}>Total a Pagar</Text>
+              <Text style={styles.totalValue}>${calculateTotalPrice()}</Text>
+            </View>
+          </View>
+        </View>
+
       </ScrollView>
 
       <View style={styles.footer}>
@@ -148,7 +240,7 @@ export default function PurchaseConfirmationScreen() {
                 color="#fff"
                 style={styles.payButtonIcon}
               />
-              <Text style={styles.payButtonText}>Pagar con Stripe</Text>
+              <Text style={styles.payButtonText}>Pagar ${calculateTotalPrice()}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -160,11 +252,11 @@ export default function PurchaseConfirmationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Colors.backgroundSecondary,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Colors.backgroundSecondary,
   },
   loadingContent: {
     flex: 1,
@@ -173,6 +265,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    padding: 16,
   },
   errorContainer: {
     flex: 1,
@@ -194,30 +287,154 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   returnButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: Colors.backgroundPrimary,
+    fontWeight: "600",
     fontSize: 16,
   },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+    marginBottom: 16,
+  },
+  tripCard: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  routeContainer: {
+    alignItems: "center",
+  },
+  routeText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  routeSubtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  seatCard: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  seatHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  seatNumber: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  seatType: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  seatPrice: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.primary,
+  },
+  passengerInfo: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray200,
+  },
+  passengerName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  passengerDetails: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  costCard: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  costRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  costLabel: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  costValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.gray200,
+    marginVertical: 12,
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  },
+  totalValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.primary,
+  },
   footer: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.backgroundPrimary,
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: Colors.gray200,
   },
   payButton: {
     backgroundColor: Colors.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   payButtonIcon: {
     marginRight: 8,
   },
   payButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: Colors.backgroundPrimary,
+    fontWeight: "600",
     fontSize: 16,
   },
 });
