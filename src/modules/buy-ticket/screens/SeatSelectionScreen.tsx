@@ -1,4 +1,3 @@
-import Header from '@/src/common/components/Header';
 import { Colors } from '@/src/common/constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -6,10 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { formatCurrency, formatDate, formatTime } from '../services/formattingUtils';
-import { BusSeat } from '../services/interfaces';
-import { singleDeckBusLayout } from '../services/mockBusLayouts';
-import { getBusSeatsForTrip } from '../services/mockData';
+import { formatCurrency, formatDate, formatTime } from '../../search-bus/services/formattingUtils';
+import { BusSeat } from '../../search-bus/services/interfaces';
+import { singleDeckBusLayout } from '../../search-bus/services/mockBusLayouts';
+import { getBusSeatsForTrip } from '../../search-bus/services/mockData';
 
 export default function SeatSelectionScreen() {
   const params = useLocalSearchParams();
@@ -73,7 +72,7 @@ export default function SeatSelectionScreen() {
     
     // Navegar a la pantalla de confirmación
     router.push({
-      pathname: '/(extras)/purchase-confirmation',
+      pathname: '/(extras)/seat-details',
       params: { 
         tripId: tripId as string,
         seats: selectedSeats.join(',')
@@ -178,9 +177,7 @@ export default function SeatSelectionScreen() {
   
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <StatusBar style="light" />
-      <Header title="Selección de Asientos" showBackButton />
-      
+      <StatusBar style="light" /> 
       <View style={styles.tripInfoContainer}>
         <Text style={styles.cooperativeName}>{tripData.cooperativeName}</Text>
         <Text style={styles.routeText}>

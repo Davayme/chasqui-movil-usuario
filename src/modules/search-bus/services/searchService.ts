@@ -1,29 +1,102 @@
+import { API_URL } from '../../../common/config/config';
+
+// Interfaces para la respuesta del backend
 export interface City {
+  id: number;
+  name: string;
+  province: string;
+}
+
+export interface IntermediateStop {
+  id: number;
+  order: number;
+  city: City;
+}
+
+export interface Frequency {
+  id: number;
+  departureTime: string;
+  status: string;
+  antResolution: string;
+  originCity: City;
+  destinationCity: City;
+  intermediateStops: IntermediateStop[];
+}
+
+export interface BusType {
+  id: number;
+  name: string;
+  floorCount: number;
+  capacity: number;
+}
+
+export interface Bus {
+  id: number;
+  licensePlate: string;
+  chassisBrand: string;
+  bodyworkBrand: string;
+  photo: string | null;
+  stoppageDays: number;
+  busType: BusType;
+}
+
+export interface Cooperative {
+  id: number;
+  name: string;
+  logo: string;
+  phone: string;
+  email: string;
+}
+
+export interface SeatsAvailability {
+  normal: {
+    available: number;
+    total: number;
+    sold: number;
+  };
+  vip: {
+    available: number;
+    total: number;
+    sold: number;
+  };
+}
+
+export interface SeatPricing {
+  basePrice: number;
+  discounts: {
+    CHILD: number;
+    SENIOR: number;
+    HANDICAPPED: number;
+  };
+}
+
+export interface Pricing {
+  normalSeat: SeatPricing;
+  vipSeat: SeatPricing;
+}
+
+export interface TripSearchResult {
+  routeSheetDetailId: number;
+  date: string;
+  frequency: Frequency;
+  bus: Bus;
+  cooperative: Cooperative;
+  seatsAvailability: SeatsAvailability;
+  pricing: Pricing;
+  status: string;
+  duration: string;
+  estimatedArrival: string;
+}
+
+// Interface para el autocompletado de ciudades (mantenemos la estructura anterior)
+export interface CityAutocomplete {
   id: string;
   name: string;
   province: string;
 }
 
-export interface Route {
-  id: string;
-  routeSheetId: string;
-  cooperativeId: number;
-  cooperativeName: string;
-  cooperativeLogo: string;
-  origin: string;
-  destination: string;
-  departureTime: string;
-  arrivalTime: string;
-  duration: string;
-  departureDate: string;
-  price: number;
-  busType: string;
-  availableSeats: number;
-  amenities: string[];
-}
-
-// Lista de ciudades disponibles
-export const CITIES: City[] = [
+// Lista de ciudades disponibles para autocompletado
+export const CITIES: CityAutocomplete[] = [
   { id: '1', name: 'Quito', province: 'Pichincha' },
   { id: '2', name: 'Guayaquil', province: 'Guayas' },
   { id: '3', name: 'Cuenca', province: 'Azuay' },
@@ -42,7 +115,7 @@ export const CITIES: City[] = [
 ];
 
 // Función para buscar ciudades
-export const searchCities = (query: string): City[] => {
+export const searchCities = (query: string): CityAutocomplete[] => {
   if (!query || query.length < 2) return [];
   
   const normalizedQuery = query.toLowerCase().trim();
@@ -53,40 +126,71 @@ export const searchCities = (query: string): City[] => {
   ).slice(0, 5); // Limitar a 5 resultados para no sobrecargar la UI
 };
 
-// Rutas disponibles (mock)
-export const MOCK_ROUTES: Route[] = [
-  {
-    id: '1',
-    routeSheetId: '101',
-    cooperativeId: 1,
-    cooperativeName: 'Transportes Express',
-    cooperativeLogo: 'https://play-lh.googleusercontent.com/70ffzgW82J9180il0PWw0J3VLYQs78XWGDJqmErLjHiOIEVSBNdYZtMObMPggG1pFmo',
-    origin: 'Quito',
-    destination: 'Guayaquil',
-    departureTime: '08:30',
-    arrivalTime: '12:30',
-    duration: '4h',
-    departureDate: '2025-06-15',
-    price: 25.00,
-    busType: 'Ejecutivo',
-    availableSeats: 23,
-    amenities: ['Aire acondicionado', 'WiFi', 'Asientos reclinables', 'Baño']
-  },
-  {
-    id: '2',
-    routeSheetId: '102',
-    cooperativeId: 2,
-    cooperativeName: 'Viajes Rápidos',
-    cooperativeLogo: 'https://play-lh.googleusercontent.com/70ffzgW82J9180il0PWw0J3VLYQs78XWGDJqmErLjHiOIEVSBNdYZtMObMPggG1pFmo',
-    origin: 'Ambato',
-    destination: 'Quito',
-    departureTime: '09:45',
-    arrivalTime: '14:00',
-    duration: '4h 15m',
-    departureDate: '2025-06-15',
-    price: 28.50,
-    busType: 'Premium',
-    availableSeats: 15,
-    amenities: ['Aire acondicionado', 'WiFi', 'Asientos reclinables', 'Baño', 'TV']
+// Mapeo de nombres de ciudades a IDs (para el backend)
+const CITY_NAME_TO_ID: { [key: string]: number } = {
+  'quito': 1,
+  'guayaquil': 2,
+  'cuenca': 3,
+  'ambato': 4,
+  'santo domingo': 5,
+  'machala': 6,
+  'durán': 7,
+  'portoviejo': 8,
+  'loja': 9,
+  'manta': 10,
+  'esmeraldas': 11,
+  'riobamba': 12,
+  'quevedo': 13,
+  'ibarra': 14,
+  'babahoyo': 15
+};
+
+// Función para obtener el ID de una ciudad por su nombre
+export const getCityIdByName = (cityName: string): number | null => {
+  const normalizedName = cityName.toLowerCase().trim();
+  return CITY_NAME_TO_ID[normalizedName] || null;
+};
+
+// Función para buscar viajes disponibles usando el endpoint real
+export const searchAvailableTrips = async (
+  originCity: string,
+  destinationCity: string,
+  date: string
+): Promise<TripSearchResult[]> => {
+  try {
+    // Obtener IDs de las ciudades
+    const originCityId = getCityIdByName(originCity);
+    const destinationCityId = getCityIdByName(destinationCity);
+
+    if (!originCityId || !destinationCityId) {
+      console.error('Ciudad no encontrada:', { originCity, destinationCity });
+      return [];
+    }
+
+    // Construir la URL del endpoint
+    const url = `${API_URL}/frequencies/search-mock?originCityId=${originCityId}&destinationCityId=${destinationCityId}&date=${date}`;
+    
+    console.log('Realizando petición a:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Error en la respuesta:', response.status, response.statusText);
+      return [];
+    }
+
+    const data: TripSearchResult[] = await response.json();
+    
+    console.log('Datos recibidos del backend:', data);
+    return data;
+
+  } catch (error) {
+    console.error('Error al buscar viajes:', error);
+    return [];
   }
-];
+};

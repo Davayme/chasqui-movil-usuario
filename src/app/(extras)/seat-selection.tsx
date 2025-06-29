@@ -1,4 +1,4 @@
-import SeatSelectionScreen from '@/src/modules/search-bus/screens/SeatSelectionScreen';
+import SeatSelectionScreen from '@/src/modules/buy-ticket/screens/SeatSelectionScreen';
 import React from 'react';
 
 export default function SeatSelection() {

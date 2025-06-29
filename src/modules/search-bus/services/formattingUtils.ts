@@ -25,6 +25,19 @@ export const formatTime = (date: Date): string => {
 };
 
 /**
+ * Formatea una hora desde string (HH:MM:SS) a formato HH:MM
+ */
+export const formatTimeFromString = (timeString: string): string => {
+  if (!timeString) return '';
+  // Tomar solo las primeras dos partes (horas y minutos)
+  const timeParts = timeString.split(':');
+  if (timeParts.length >= 2) {
+    return `${timeParts[0]}:${timeParts[1]}`;
+  }
+  return timeString;
+};
+
+/**
  * Calcula y formatea la duración entre dos fechas
  */
 export const formatDuration = (startDate: Date, endDate: Date): string => {
@@ -118,4 +131,4 @@ export const getDayOfWeek = (date: Date): string => {
 export const capitalizeFirstLetter = (string: string): string => {
   if (!string) return '';
   return string.charAt(0).toUpperCase() + string.slice(1);
-}; 
+};

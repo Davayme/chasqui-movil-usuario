@@ -68,7 +68,7 @@
         "origin": false,
         "initialRouteName": "./src/app"
       },
-      "apiUrl": "https://chasquigo-backend-7yn2.onrender.com",
+      "apiUrl": "http://192.168.31.110:3000",
       "eas": {
         "projectId": "b1554167-ea68-44f2-bdbf-30e35bb9b069"
       },

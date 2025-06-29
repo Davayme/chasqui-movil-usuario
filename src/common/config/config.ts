@@ -17,11 +17,17 @@ export const API_ENDPOINTS = {
     PROFILE: '/users/profile',
     REGISTER: '/users/client',
   },
+  FRECUENCIES: {
+    GET_FRECUENCIES: '/frequencies/search-mock',
+  },
   PAYMENTS: {
     CREATE_PAYMENT_INTENT: '/payments/create-payment-intent',
   },
   QR: {
     GET_QR: '/qr/demo',
+  },
+  AWS: {
+    VALIDATE_DOCUMENT: '/aws/validate-document',
   },
 };
 

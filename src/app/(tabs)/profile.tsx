@@ -3,7 +3,6 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Header from '../../common/components/Header';
 import { Colors } from '../../common/constants/colors';
 import { useAuth } from '../../common/context/AuthContext';
 
@@ -17,9 +16,6 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar style="light" />
-      
-      <Header title="Mi Perfil" />
-      
       <View style={styles.content}>
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>

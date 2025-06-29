@@ -3,8 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Colors } from '../../../common/constants/colors';
-import { City } from '../services/searchService';
-import CityAutocomplete from './cityAutoComplete';
+import { CityAutocomplete } from '../services/searchService';
+import CityAutoCompleteComponent from './cityAutoComplete';
 
 type FormSearchBusProps = {
   onSearch: (origin: string, destination: string, date: string) => void;
@@ -12,8 +12,8 @@ type FormSearchBusProps = {
 
 export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
   // Estado para almacenar las ciudades seleccionadas (objetos completos)
-  const [originCity, setOriginCity] = useState<City | null>(null);
-  const [destinationCity, setDestinationCity] = useState<City | null>(null);
+  const [originCity, setOriginCity] = useState<CityAutocomplete | null>(null);
+  const [destinationCity, setDestinationCity] = useState<CityAutocomplete | null>(null);
   
   // Estado para fecha
   const [selectedDate, setSelectedDate] = useState('');
@@ -75,10 +75,10 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
       
       <View style={styles.cityInputsContainer}>
         <View style={styles.originInputContainer}>
-          <CityAutocomplete
+          <CityAutoCompleteComponent
             placeholder="Ciudad de origen"
             value={originCity?.name || ''}
-            onSelectCity={(city) => {
+            onSelectCity={(city: CityAutocomplete) => {
               if (city.id) {
                 setOriginCity(city);
               } else {
@@ -90,10 +90,10 @@ export default function FormSearchBus({ onSearch }: FormSearchBusProps) {
         </View>
         
         <View style={styles.destinationInputContainer}>
-          <CityAutocomplete
+          <CityAutoCompleteComponent
             placeholder="Ciudad de destino"
             value={destinationCity?.name || ''}
-            onSelectCity={(city) => {
+            onSelectCity={(city: CityAutocomplete) => {
               if (city.id) {
                 setDestinationCity(city);
               } else {
