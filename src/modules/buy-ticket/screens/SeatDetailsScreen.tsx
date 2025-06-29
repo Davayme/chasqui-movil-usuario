@@ -1,10 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../../common/constants/colors';
 import FormPassenger from '../components/seat-details/form-passenger';
-import SeatInfo from '../components/seat-details/seat-info';
+import PassengerTypeSelector from '../components/seat-details/passenger-type-selector';
 import UploadDocs from '../components/seat-details/upload-docs';
 import { ValidationResult } from '../services/aws.service';
 import { BusInfo, RouteInfo } from '../services/seatService';
@@ -21,6 +22,7 @@ interface PassengerData {
   firstName: string;
   lastName: string;
   idNumber: string;
+  passengerType: 'normal' | 'child' | 'elderly' | 'disabled';
   documentUri: string;
   documentType: string;
   documentName: string;
@@ -50,6 +52,7 @@ export default function SeatDetailsScreen() {
           firstName: '',
           lastName: '',
           idNumber: '',
+          passengerType: 'normal' as const,
           documentUri: '',
           documentType: '',
           documentName: '',
@@ -126,17 +129,35 @@ export default function SeatDetailsScreen() {
     }
   };
 
+  const handleChangePassengerType = (seatId: number, passengerType: 'normal' | 'child' | 'elderly' | 'disabled') => {
+    setPassengers(
+      passengers.map(p => (
+        p.seatId === seatId 
+          ? { 
+              ...p, 
+              passengerType,
+              // Limpiar validación cuando cambia el tipo
+              isValidated: passengerType === 'normal', // Normal no necesita validación
+              validationResult: null,
+              documentUri: '',
+              documentType: '',
+              documentName: ''
+            } 
+          : p
+      ))
+    );
+  };
+
   const handleContinue = () => {
-    // Verificar que todos los asientos VIP estén validados si requieren validación
-    const invalidSeats = passengers.filter(p => {
-      const seat = selectedSeats.find(s => s.id === p.seatId);
-      return seat && seat.type === 'VIP' && !p.isValidated;
-    });
+    // Verificar que todos los asientos con descuento estén validados
+    const passengersNeedingValidation = passengers.filter(p => 
+      ['child', 'elderly', 'disabled'].includes(p.passengerType) && !p.isValidated
+    );
     
-    if (invalidSeats.length > 0) {
+    if (passengersNeedingValidation.length > 0) {
       Alert.alert(
         'Validación pendiente',
-        'Debe validar los documentos de todos los asientos VIP antes de continuar.',
+        'Debe validar los documentos de todos los pasajeros con descuento antes de continuar.',
         [{ text: 'OK' }]
       );
       return;
@@ -169,15 +190,38 @@ export default function SeatDetailsScreen() {
     });
   };
 
-  const calculatePrice = (seat: SelectedSeat): { original: number; discounted?: number } => {
+  // Función para verificar si todos los formularios están completos
+  const isFormValid = () => {
+    // Verificar que todos los pasajeros tengan información completa
+    const allFieldsComplete = passengers.every(p => 
+      p.firstName.trim() && p.lastName.trim() && p.idNumber.trim()
+    );
+
+    // Verificar que todos los pasajeros con descuento estén validados
+    const allDiscountPassengersValidated = passengers.every(p => 
+      !['child', 'elderly', 'disabled'].includes(p.passengerType) || p.isValidated
+    );
+
+    return allFieldsComplete && allDiscountPassengersValidated;
+  };
+
+  const calculatePrice = (seat: SelectedSeat, passenger?: PassengerData): { original: number; discounted?: number } => {
     const basePrice = 25; // Precio base, debería venir de la API
     const vipMultiplier = 1.5;
     
     const originalPrice = seat.type === 'VIP' ? basePrice * vipMultiplier : basePrice;
     
+    // Aplicar descuentos según el tipo de pasajero
+    if (passenger && ['child', 'elderly', 'disabled'].includes(passenger.passengerType)) {
+      const discountedPrice = originalPrice * 0.5; // 50% de descuento
+      return {
+        original: originalPrice,
+        discounted: discountedPrice
+      };
+    }
+    
     return {
       original: originalPrice,
-      // Aquí se podrían aplicar descuentos según validaciones
     };
   };
 
@@ -216,46 +260,103 @@ export default function SeatDetailsScreen() {
 
         {selectedSeats.map((seat) => {
           const passenger = passengers.find(p => p.seatId === seat.id);
-          const pricing = calculatePrice(seat);
-          const needsValidation = seat.type === 'VIP'; // Solo los VIP requieren validación por ahora
+          const pricing = calculatePrice(seat, passenger);
+          const needsValidation = passenger && ['child', 'elderly', 'disabled'].includes(passenger.passengerType);
 
           return (
-            <View key={seat.id} style={styles.seatSection}>
-              <SeatInfo
-                seatNumber={seat.number}
-                seatType={seat.type.toLowerCase() as any}
-                originalPrice={pricing.original}
-                discountedPrice={pricing.discounted}
-              />
+            <View key={seat.id} style={styles.seatCard}>
+              {/* Header simplificado del asiento */}
+              <View style={styles.seatHeader}>
+                <View style={styles.seatInfo}>
+                  <Text style={styles.seatNumber}>Asiento {seat.number}</Text>
+                  <View style={styles.seatTags}>
+                    {seat.type === 'VIP' && (
+                      <View style={styles.vipBadge}>
+                        <Ionicons name="star" size={12} color="#f59e0b" />
+                        <Text style={styles.vipText}>VIP</Text>
+                      </View>
+                    )}
+                    <View style={styles.locationTag}>
+                      <Ionicons 
+                        name={seat.location === 'ventana' ? 'car-outline' : 'walk-outline'} 
+                        size={14} 
+                        color={Colors.textSecondary} 
+                      />
+                      <Text style={styles.locationText}>
+                        {seat.location === 'ventana' ? 'Ventana' : 'Pasillo'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.priceContainer}>
+                  {pricing.discounted ? (
+                    <>
+                      <Text style={styles.originalPrice}>${pricing.original}</Text>
+                      <Text style={styles.discountedPrice}>${pricing.discounted}</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.price}>${pricing.original}</Text>
+                  )}
+                </View>
+              </View>
               
-              <FormPassenger
-                firstName={passenger?.firstName || ''}
-                lastName={passenger?.lastName || ''}
-                idNumber={passenger?.idNumber || ''}
-                onChangeFirstName={(text) => handleChangeFirstName(seat.id, text)}
-                onChangeLastName={(text) => handleChangeLastName(seat.id, text)}
-                onChangeIdNumber={(text) => handleChangeIdNumber(seat.id, text)}
-              />
+              {/* Tipo de pasajero */}
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Tipo de pasajero</Text>
+                <PassengerTypeSelector
+                  selectedType={passenger?.passengerType || 'normal'}
+                  onTypeChange={(type) => handleChangePassengerType(seat.id, type)}
+                />
+              </View>
               
-              {needsValidation && (
-                <UploadDocs
-                  seatType={seat.type.toLowerCase() as any}
+              {/* Información del pasajero */}
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Información del pasajero</Text>
+                <FormPassenger
                   firstName={passenger?.firstName || ''}
                   lastName={passenger?.lastName || ''}
-                  onDocumentSelected={(uri, type, name) => 
-                    handleDocumentSelected(seat.id, uri, type, name)
-                  }
-                  onValidationResult={(result) => 
-                    handleValidationResult(seat.id, result)
-                  }
+                  idNumber={passenger?.idNumber || ''}
+                  onChangeFirstName={(text) => handleChangeFirstName(seat.id, text)}
+                  onChangeLastName={(text) => handleChangeLastName(seat.id, text)}
+                  onChangeIdNumber={(text) => handleChangeIdNumber(seat.id, text)}
                 />
+              </View>
+              
+              {/* Validación de documentos */}
+              {needsValidation && passenger && ['child', 'elderly', 'disabled'].includes(passenger.passengerType) && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>Validación de descuento</Text>
+                  <UploadDocs
+                    seatType={passenger.passengerType as 'child' | 'elderly' | 'disabled'}
+                    firstName={passenger?.firstName || ''}
+                    lastName={passenger?.lastName || ''}
+                    onDocumentSelected={(uri, type, name) => 
+                      handleDocumentSelected(seat.id, uri, type, name)
+                    }
+                    onValidationResult={(result) => 
+                      handleValidationResult(seat.id, result)
+                    }
+                  />
+                </View>
               )}
             </View>
           );
         })}
 
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueButtonText}>Continuar al Pago</Text>
+        <TouchableOpacity 
+          style={[
+            styles.continueButton, 
+            !isFormValid() && styles.continueButtonDisabled
+          ]} 
+          onPress={handleContinue}
+          disabled={!isFormValid()}
+        >
+          <Text style={[
+            styles.continueButtonText,
+            !isFormValid() && styles.continueButtonTextDisabled
+          ]}>
+            Continuar al Pago
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -265,43 +366,44 @@ export default function SeatDetailsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.backgroundPrimary,
+    backgroundColor: Colors.backgroundSecondary,
   },
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     color: Colors.textSecondary,
-    marginBottom: 24,
+    marginBottom: 32,
+    lineHeight: 24,
   },
   errorText: {
     fontSize: 16,
-    color: Colors.danger,
+    color: Colors.error,
     textAlign: 'center',
     marginTop: 32,
   },
   tripInfoContainer: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: Colors.backgroundPrimary,
+    padding: 20,
+    borderRadius: 16,
     marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
   },
   tripInfoText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: Colors.textPrimary,
     marginBottom: 4,
   },
@@ -309,19 +411,115 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
   },
-  seatSection: {
+  seatCard: {
+    backgroundColor: Colors.backgroundPrimary,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  seatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray200,
+  },
+  seatInfo: {
+    flex: 1,
+  },
+  seatNumber: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 8,
+  },
+  seatTags: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  vipBadge: {
+    backgroundColor: Colors.gray50,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  vipText: {
+    color: Colors.warning,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  locationTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  locationText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
+  },
+  price: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: Colors.textLight,
+    textDecorationLine: 'line-through',
+    marginBottom: 2,
+  },
+  discountedPrice: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.success,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 12,
   },
   continueButton: {
     backgroundColor: Colors.primary,
-    padding: 16,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 12,
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: 24,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  continueButtonDisabled: {
+    backgroundColor: Colors.gray200,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   continueButtonText: {
-    color: '#fff',
+    color: Colors.backgroundPrimary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+  },
+  continueButtonTextDisabled: {
+    color: Colors.textLight,
   }
 });

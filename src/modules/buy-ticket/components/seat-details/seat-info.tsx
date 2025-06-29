@@ -1,7 +1,7 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Colors } from "../../../../common/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Colors } from "../../../../common/constants/colors";
 
 type SeatInfoProps = {
   seatNumber: string;
@@ -36,9 +36,9 @@ export default function SeatInfo({
       case "elderly":
         return "Tercera edad";
       case "disabled":
-        return "Discapacidad";
+        return "Persona con discapacidad";
       default:
-        return "Normal";
+        return "Adulto normal";
     }
   };
 
@@ -56,15 +56,27 @@ export default function SeatInfo({
           <Ionicons
             name={getIconName()}
             size={24}
-            color={Colors.primary}
+            color={hasDiscount ? Colors.success : Colors.primary}
             style={styles.seatTypeIcon}
           />
-          <Text style={styles.seatType}>{getSeatTypeLabel()}</Text>
+          <View>
+            <Text style={[
+              styles.seatType, 
+              hasDiscount && styles.discountedSeatType
+            ]}>
+              {getSeatTypeLabel()}
+            </Text>
+            {hasDiscount && (
+              <Text style={styles.discountBadge}>
+                ✅ Con descuento aplicado
+              </Text>
+            )}
+          </View>
         </View>
       </View>
 
       <View style={styles.priceContainer}>
-        {hasDiscount && (
+        {hasDiscount ? (
           <>
             <View style={styles.priceRow}>
               <Text style={styles.priceLabel}>Precio original:</Text>
@@ -73,17 +85,24 @@ export default function SeatInfo({
               </Text>
             </View>
             <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Descuento:</Text>
+              <Text style={styles.priceLabel}>Descuento aplicado:</Text>
               <Text style={styles.discount}>- ${discount.toFixed(2)}</Text>
             </View>
+            <View style={[styles.priceRow, styles.finalPriceRow]}>
+              <Text style={styles.finalPriceLabel}>Precio final:</Text>
+              <Text style={styles.finalPrice}>
+                ${(discountedPrice || originalPrice).toFixed(2)}
+              </Text>
+            </View>
           </>
+        ) : (
+          <View style={[styles.priceRow, styles.singlePriceRow]}>
+            <Text style={styles.finalPriceLabel}>Precio del asiento:</Text>
+            <Text style={styles.finalPrice}>
+              ${originalPrice.toFixed(2)}
+            </Text>
+          </View>
         )}
-        <View style={styles.priceRow}>
-          <Text style={styles.priceLabel}>Precio final:</Text>
-          <Text style={styles.finalPrice}>
-            ${(discountedPrice || originalPrice).toFixed(2)}
-          </Text>
-        </View>
       </View>
     </View>
   );
@@ -125,6 +144,19 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: "600",
   },
+  discountedSeatType: {
+    color: Colors.success,
+  },
+  discountBadge: {
+    backgroundColor: Colors.success,
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
   priceContainer: {
     backgroundColor: Colors.backgroundPrimary,
     borderRadius: 8,
@@ -148,5 +180,21 @@ const styles = StyleSheet.create({
   finalPrice: {
     fontWeight: "bold",
     color: Colors.primary,
+  },
+  finalPriceLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  },
+  finalPriceRow: {
+    paddingTop: 8,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+  },
+  singlePriceRow: {
+    paddingTop: 0,
+    marginTop: 0,
+    borderTopWidth: 0,
   },
 });

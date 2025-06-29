@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Colors } from '../../../../common/constants/colors';
 
 type FormPassengerProps = {
@@ -21,8 +21,6 @@ export default function FormPassenger({
 }: FormPassengerProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Información del Pasajero</Text>
-
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Nombre</Text>
         <TextInput
@@ -30,6 +28,7 @@ export default function FormPassenger({
           placeholder="Ingrese el nombre"
           value={firstName}
           onChangeText={onChangeFirstName}
+          placeholderTextColor={Colors.textLight}
         />
       </View>
 
@@ -40,6 +39,7 @@ export default function FormPassenger({
           placeholder="Ingrese el apellido"
           value={lastName}
           onChangeText={onChangeLastName}
+          placeholderTextColor={Colors.textLight}
         />
       </View>
 
@@ -52,6 +52,7 @@ export default function FormPassenger({
           value={idNumber}
           onChangeText={onChangeIdNumber}
           maxLength={10}
+          placeholderTextColor={Colors.textLight}
         />
       </View>
     </View>
@@ -60,32 +61,23 @@ export default function FormPassenger({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.backgroundPrimary,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginBottom: 16,
+    gap: 16,
   },
   inputContainer: {
-    marginBottom: 16,
+    gap: 6,
   },
   label: {
     fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 6,
+    fontWeight: '500',
+    color: Colors.textPrimary,
   },
   input: {
     borderWidth: 1,
-    borderColor: Colors.backgroundTertiary,
+    borderColor: Colors.gray200,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     color: Colors.textPrimary,
-    backgroundColor: Colors.backgroundSecondary,
+    backgroundColor: Colors.backgroundPrimary,
   }
 });
