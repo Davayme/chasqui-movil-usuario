@@ -159,9 +159,6 @@ export default function LoginScreen() {
                     <Text style={styles.fieldErrorText}>{errors.password}</Text>
                 ) : null}
                 
-                <TouchableOpacity style={styles.forgotPassword}>
-                    <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-                </TouchableOpacity>
                 
                 <TouchableOpacity 
                     style={[

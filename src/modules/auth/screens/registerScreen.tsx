@@ -11,8 +11,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Document type dropdown options
 const DOCUMENT_TYPES = [
-  { label: 'Cédula', value: 'cedula' },
-  { label: 'RUC', value: 'ruc' },
+  { label: 'Cédula', value: 'CEDULA' },
+  { label: 'RUC', value: 'RUC' },
 ];
 
 export default function RegisterScreen() {
@@ -105,8 +105,8 @@ export default function RegisterScreen() {
       case 'phone':
         if (!value) {
           newErrors.phone = 'El teléfono es requerido';
-        } else if (!/^\+593\d{9}$/.test(value)) {
-          newErrors.phone = 'Ingrese un número válido con formato +593XXXXXXXXX';
+        } else if (!/^09\d{8}$/.test(value)) {
+          newErrors.phone = 'Ingrese un número válido que inicie con 09 y tenga 10 dígitos';
         } else {
           delete newErrors.phone;
         }

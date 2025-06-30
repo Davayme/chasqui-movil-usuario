@@ -68,7 +68,7 @@
         "origin": false,
         "initialRouteName": "./src/app"
       },
-      "apiUrl": "http://192.168.31.110:3000",
+      "apiUrl": "http://45.14.225.213:3000",
       "eas": {
         "projectId": "b1554167-ea68-44f2-bdbf-30e35bb9b069"
       },
