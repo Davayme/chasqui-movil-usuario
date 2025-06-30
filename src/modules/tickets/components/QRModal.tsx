@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Image,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,13 +14,38 @@ import {
 import ViewShot from 'react-native-view-shot';
 import { showToast } from '../../../common/components/Toast';
 import { Colors } from '../../../common/constants/colors';
+import { useAuth } from '../../../common/context/AuthContext';
 import { getMockTicketQR, getTicketQR } from '../services/ticket-service';
+
+interface UITicket {
+  id: string;
+  orderNumber: string;
+  origin: string;
+  destination: string;
+  departureDate: string;
+  departureTime: string;
+  company: string;
+  seats: string;
+  price: number;
+  status: string;
+  statusText: string;
+  passengerCount: number;
+  qrCode?: string;
+  qrBase64?: string;
+  ticketId: number;
+  passengers: {
+    name: string;
+    seat: string;
+    type: string;
+    price: number;
+  }[];
+}
 
 interface QRModalProps {
   visible: boolean;
   onClose: () => void;
   ticketId: string;
-  ticketInfo: string;
+  ticket: UITicket;
   qrBase64?: string; // QR ya disponible del backend
 }
 
@@ -27,19 +53,14 @@ const QRModal: React.FC<QRModalProps> = ({
   visible, 
   onClose, 
   ticketId, 
-  ticketInfo,
+  ticket,
   qrBase64
 }) => {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const viewShotRef = useRef<ViewShot | null>(null);
-
-  // Extraer información del boleto para mostrar en la imagen
-  const ticketParts = ticketInfo.split('_');
-  const origin = ticketParts[0] || '';
-  const destination = ticketParts[1] || '';
-  const date = ticketParts.slice(2).join(' ').replace(/_/g, ' ') || '';
+  const { user } = useAuth();
 
   useEffect(() => {
     const loadQRCode = async () => {
@@ -142,41 +163,98 @@ const QRModal: React.FC<QRModalProps> = ({
             </TouchableOpacity>
           </View>
           
-          <ViewShot
-            ref={viewShotRef}
-            options={{ format: 'png', quality: 1 }}
-            style={styles.viewShotContainer}
+          <ScrollView 
+            style={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
           >
-            <View style={styles.qrCaptureContainer}>
-              <View style={styles.qrHeader}>
-                <Text style={styles.qrTitle}>ChasquiGo - Boleto de Viaje</Text>
-                <Text style={styles.qrSubtitle}>{origin} → {destination}</Text>
-                <Text style={styles.qrDate}>{date}</Text>
+            {/* Sección que se captura para guardar en galería */}
+            <ViewShot
+              ref={viewShotRef}
+              options={{ format: 'png', quality: 1 }}
+              style={styles.viewShotContainer}
+            >
+              <View style={styles.qrCaptureContainer}>
+                <View style={styles.qrHeader}>
+                  <Text style={styles.qrTitle}>ChasquiGo - Boleto de Viaje</Text>
+                  <Text style={styles.qrSubtitle}>{ticket.origin} → {ticket.destination}</Text>
+                  <Text style={styles.qrDate}>{ticket.departureDate} - {ticket.departureTime}</Text>
+                  {user && (
+                    <Text style={styles.userName}>Comprado por: {user.firstName} {user.lastName}</Text>
+                  )}
+                  <Text style={styles.orderNumber}>Orden: {ticket.orderNumber}</Text>
+                </View>
+                
+                <View style={styles.qrImageContainer}>
+                  {loading ? (
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                  ) : qrCode ? (
+                    <Image
+                      source={{ uri: qrCode }}
+                      style={styles.qrImage}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <Text style={styles.errorText}>No se pudo cargar el código QR</Text>
+                  )}
+                </View>
+                
+                <Text style={styles.qrFooter}>
+                  Presente este código al personal de la cooperativa
+                </Text>
               </View>
-              
-              <View style={styles.qrImageContainer}>
-                {loading ? (
-                  <ActivityIndicator size="large" color={Colors.primary} />
-                ) : qrCode ? (
-                  <Image
-                    source={{ uri: qrCode }}
-                    style={styles.qrImage}
-                    resizeMode="contain"
-                  />
-                ) : (
-                  <Text style={styles.errorText}>No se pudo cargar el código QR</Text>
-                )}
+            </ViewShot>
+
+            {/* Información adicional (NO se incluye en la imagen guardada) */}
+            <View style={styles.ticketDetails}>
+              <View style={styles.detailSection}>
+                <Text style={styles.sectionTitle}>Detalles del Viaje</Text>
+                <View style={styles.detailRow}>
+                  <Ionicons name="business-outline" size={16} color={Colors.textSecondary} />
+                  <Text style={styles.detailLabel}>Empresa:</Text>
+                  <Text style={styles.detailValue}>{ticket.company}</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Ionicons name="cash-outline" size={16} color={Colors.textSecondary} />
+                  <Text style={styles.detailLabel}>Total:</Text>
+                  <Text style={styles.detailValue}>${ticket.price.toLocaleString()}</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Ionicons name="people-outline" size={16} color={Colors.textSecondary} />
+                  <Text style={styles.detailLabel}>Pasajeros:</Text>
+                  <Text style={styles.detailValue}>{ticket.passengerCount}</Text>
+                </View>
               </View>
-              
-              <Text style={styles.qrFooter}>
-                Presente este código al personal de la cooperativa
-              </Text>
+
+              {/* Lista de pasajeros */}
+              {ticket.passengers && ticket.passengers.length > 0 && (
+                <View style={styles.detailSection}>
+                  <Text style={styles.sectionTitle}>Pasajeros</Text>
+                  {ticket.passengers.map((passenger, index) => (
+                    <View key={index} style={styles.passengerCard}>
+                      <View style={styles.passengerHeader}>
+                        <Text style={styles.passengerName}>{passenger.name}</Text>
+                        <Text style={styles.passengerType}>{passenger.type}</Text>
+                      </View>
+                      <View style={styles.passengerDetails}>
+                        <View style={styles.passengerDetail}>
+                          <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
+                          <Text style={styles.passengerDetailText}>Asiento {passenger.seat}</Text>
+                        </View>
+                        <View style={styles.passengerDetail}>
+                          <Ionicons name="cash-outline" size={14} color={Colors.textSecondary} />
+                          <Text style={styles.passengerDetailText}>${passenger.price.toLocaleString()}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
-          </ViewShot>
-          
-          <Text style={styles.infoText}>
-            Muestra este código al personal de la cooperativa para abordar
-          </Text>
+            
+            <Text style={styles.infoText}>
+              Muestra este código al personal de la cooperativa para abordar
+            </Text>
+          </ScrollView>
           
           <View style={styles.actionsContainer}>
             <TouchableOpacity 
@@ -213,7 +291,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     width: '100%',
-    maxWidth: 350,
+    maxWidth: 400,
+    maxHeight: '90%',
     alignItems: 'center',
   },
   modalHeader: {
@@ -228,66 +307,164 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.textPrimary,
   },
+  scrollContent: {
+    width: '100%',
+  },
   viewShotContainer: {
-    width: 280,
+    width: '100%',
     backgroundColor: '#fff',
     borderRadius: 8,
     overflow: 'hidden',
+    marginBottom: 20,
   },
   qrCaptureContainer: {
-    padding: 15,
+    padding: 20,
     alignItems: 'center',
     backgroundColor: '#fff',
   },
   qrHeader: {
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 15,
   },
   qrTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: Colors.primary,
-    marginBottom: 5,
+    marginBottom: 8,
+    textAlign: 'center',
   },
   qrSubtitle: {
     fontSize: 14,
     fontWeight: '600',
     color: Colors.textPrimary,
-    marginBottom: 3,
+    marginBottom: 4,
+    textAlign: 'center',
   },
   qrDate: {
     fontSize: 12,
     color: Colors.textSecondary,
-    marginBottom: 10,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  userName: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  orderNumber: {
+    fontSize: 10,
+    color: Colors.textSecondary,
+    marginBottom: 15,
+    textAlign: 'center',
   },
   qrImageContainer: {
-    width: 220,
-    height: 220,
+    width: 200,
+    height: 200,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f9f9f9',
     borderRadius: 8,
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 15,
   },
   qrImage: {
-    width: 200,
-    height: 200,
+    width: 180,
+    height: 180,
   },
   qrFooter: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.textSecondary,
     textAlign: 'center',
+    marginTop: 5,
   },
   errorText: {
     color: Colors.error,
     textAlign: 'center',
+    fontSize: 12,
+  },
+  ticketDetails: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  detailSection: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.textPrimary,
+    marginBottom: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+    marginLeft: 8,
+    minWidth: 80,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  passengerCard: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  passengerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  passengerName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: Colors.textPrimary,
+    flex: 1,
+  },
+  passengerType: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.primary,
+    backgroundColor: Colors.primary + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  passengerDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  passengerDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passengerDetailText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginLeft: 4,
   },
   infoText: {
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginVertical: 20,
+    marginBottom: 20,
   },
   actionsContainer: {
     width: '100%',
@@ -301,7 +478,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionButtonDisabled: {
-    backgroundColor: Colors.gray400,
+    backgroundColor: '#9ba9be',
   },
   actionButtonText: {
     color: '#fff',

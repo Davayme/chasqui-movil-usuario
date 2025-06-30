@@ -45,9 +45,6 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, filter }) => {
     setQrModalVisible(false);
   };
 
-  // Información para el nombre del archivo QR
-  const ticketInfo = `${ticket.origin}_${ticket.destination}_${ticket.departureDate.replace(/\s+/g, '_')}`;
-
   return (
     <>
       <TouchableOpacity style={styles.ticketCard}>
@@ -119,16 +116,6 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, filter }) => {
             <Ionicons name="qr-code-outline" size={20} color="#fff" />
             <Text style={styles.actionButtonText}>Ver QR</Text>
           </TouchableOpacity>
-          
-          {filter === 'active' && (
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.actionButtonSecondary]}
-              onPress={showQRModal}
-            >
-              <Ionicons name="download-outline" size={20} color={Colors.primary} />
-              <Text style={styles.actionButtonTextSecondary}>Guardar</Text>
-            </TouchableOpacity>
-          )}
         </View>
       </TouchableOpacity>
 
@@ -137,7 +124,7 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket, filter }) => {
         visible={qrModalVisible}
         onClose={hideQRModal}
         ticketId={ticket.ticketId.toString()}
-        ticketInfo={ticketInfo}
+        ticket={ticket}
         qrBase64={ticket.qrBase64}
       />
     </>
@@ -224,27 +211,16 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   actionButton: {
-    flex: 1,
+    width: '100%',
     backgroundColor: Colors.primary,
     borderRadius: 6,
     paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
-  },
-  actionButtonSecondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: Colors.primary,
   },
   actionButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
-    marginLeft: 6,
-  },
-  actionButtonTextSecondary: {
-    color: Colors.primary,
     fontWeight: 'bold',
     marginLeft: 6,
   },

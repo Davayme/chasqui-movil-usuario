@@ -14,11 +14,8 @@ interface CostSummaryProps {
 }
 
 const CostSummary: React.FC<CostSummaryProps> = ({ pricing }) => {
-  // Calcular el IVA (15% del subtotal)
-  const iva = pricing.subtotal * 0.15;
-  
-  // Calcular el total final incluyendo IVA
-  const finalTotal = pricing.grandTotal + iva;
+  // El total final es el grandTotal (ya incluye todos los costos e impuestos)
+  const finalTotal = pricing.grandTotal;
   
   return (
     <View style={styles.container}>
@@ -41,10 +38,9 @@ const CostSummary: React.FC<CostSummaryProps> = ({ pricing }) => {
         <Text style={styles.costValue}>{formatCurrency(pricing.serviceFee)}</Text>
       </View>
       
-      <View style={styles.costItem}>
-        <Text style={styles.costLabel}>IVA (15%)</Text>
-        <Text style={styles.costValue}>{formatCurrency(iva)}</Text>
-      </View>
+      <Text style={styles.paymentNote}>
+        *Los impuestos están incluidos en el precio final
+      </Text>
       
       <View style={styles.divider} />
       
