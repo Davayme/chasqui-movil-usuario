@@ -1,11 +1,15 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../../common/constants/colors';
-import { formatCurrency, formatTimeFromString } from '../services/formattingUtils';
-import { TripSearchResult } from '../services/searchService';
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { router } from "expo-router";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { showToast } from "../../../common/components/Toast";
+import { Colors } from "../../../common/constants/colors";
+import {
+  formatCurrency,
+  formatTimeFromString,
+} from "../services/formattingUtils";
+import { TripSearchResult } from "../services/searchService";
 
 interface TripCardProps {
   trip: TripSearchResult;
@@ -13,32 +17,45 @@ interface TripCardProps {
 
 export default function TripCard({ trip }: TripCardProps) {
   // Calcular asientos disponibles
-  const totalAvailable = trip.seatsAvailability.normal.available + trip.seatsAvailability.vip.available;
-  const totalSeats = trip.seatsAvailability.normal.total + trip.seatsAvailability.vip.total;
-  
+  const totalAvailable =
+    trip.seatsAvailability.normal.available +
+    trip.seatsAvailability.vip.available;
+  const totalSeats =
+    trip.seatsAvailability.normal.total + trip.seatsAvailability.vip.total;
+
+  // Verificar si el viaje está disponible para seleccionar
+  const isSelectable = trip.routeSheetDetailId !== null && trip.routeSheetDetailId !== undefined;
+
   // Función para navegar a los detalles del viaje
   const handleSelectTrip = () => {
-    // Usar routeSheetDetailId como ID principal, que es lo que espera el backend
-    const tripId = trip.routeSheetDetailId?.toString() || trip.frequency.id.toString();
-    
+    // Validar que routeSheetDetailId no sea null
+    if (!isSelectable) {
+      console.error("Error: routeSheetDetailId es null o undefined");
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No se puede procesar este viaje. Por favor, intenta con otro.',
+      });
+      return;
+    }
+
     router.push({
-      pathname: '/(extras)/seat-selection',
-      params: { 
-        tripId
-      }
+      pathname: "/(extras)/seat-selection",
+      params: { tripId: trip.routeSheetDetailId!.toString() },
     });
   };
 
   return (
-    <TouchableOpacity 
-      style={styles.tripItem} 
-      onPress={handleSelectTrip}
-      activeOpacity={0.7}
+    <TouchableOpacity
+      style={[styles.tripItem, !isSelectable && styles.tripItemDisabled]}
+      onPress={isSelectable ? handleSelectTrip : undefined}
+      activeOpacity={isSelectable ? 0.7 : 1}
+      disabled={!isSelectable}
     >
       <View style={styles.tripHeader}>
         <View style={styles.companyContainer}>
-          <Image 
-            source={{ uri: trip.cooperative.logo }} 
+          <Image
+            source={{ uri: trip.cooperative.logo }}
             style={styles.companyLogo}
             contentFit="contain"
           />
@@ -49,67 +66,78 @@ export default function TripCard({ trip }: TripCardProps) {
             </Text>
           </View>
         </View>
-        <View style={styles.busTypeContainer}>
-          <Text style={styles.busTypeText}>
-            {trip.bus.busType.name}
-          </Text>
-          <Text style={styles.capacityText}>
-            {trip.bus.busType.capacity} asientos
-          </Text>
-        </View>
       </View>
-      
+
       <View style={styles.tripDetails}>
         <View style={styles.timeContainer}>
-          <Text style={styles.timeText}>{formatTimeFromString(trip.frequency.departureTime)}</Text>
+          <Text style={styles.timeText}>
+            {formatTimeFromString(trip.frequency.departureTime)}
+          </Text>
           <View style={styles.durationContainer}>
             <View style={styles.durationLine} />
-            <Text style={styles.durationText}>
-              {trip.duration}
-            </Text>
+            <Text style={styles.durationText}>{trip.duration}</Text>
             <View style={styles.durationLine} />
           </View>
-          <Text style={styles.timeText}>{formatTimeFromString(trip.estimatedArrival)}</Text>
+          <Text style={styles.timeText}>
+            {formatTimeFromString(trip.estimatedArrival)}
+          </Text>
         </View>
-        
+
         <View style={styles.routeContainer}>
           <Text style={styles.cityText}>{trip.frequency.originCity.name}</Text>
-          <Text style={styles.cityText}>{trip.frequency.destinationCity.name}</Text>
+          <Text style={styles.cityText}>
+            {trip.frequency.destinationCity.name}
+          </Text>
         </View>
-        
+
         {trip.frequency.intermediateStops.length > 0 && (
           <View style={styles.stopsContainer}>
-            <Ionicons name="ellipsis-horizontal" size={16} color={Colors.textSecondary} />
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={16}
+              color={Colors.textSecondary}
+            />
             <Text style={styles.stopsText}>
-              {trip.frequency.intermediateStops.length} {trip.frequency.intermediateStops.length === 1 ? 'parada' : 'paradas'} intermedias
+              {trip.frequency.intermediateStops.length}{" "}
+              {trip.frequency.intermediateStops.length === 1
+                ? "parada"
+                : "paradas"}{" "}
+              intermedias
             </Text>
           </View>
         )}
-        
+
         <View style={styles.seatsContainer}>
-          <Ionicons 
-            name={totalAvailable < 10 ? "alert-circle-outline" : "person-outline"} 
-            size={16} 
-            color={totalAvailable < 10 ? Colors.warning : Colors.textSecondary} 
+          <Ionicons
+            name={
+              totalAvailable < 10 ? "alert-circle-outline" : "person-outline"
+            }
+            size={16}
+            color={totalAvailable < 10 ? Colors.warning : Colors.textSecondary}
           />
-          <Text 
+          <Text
             style={[
               styles.seatsText,
-              totalAvailable < 10 ? styles.seatsWarning : null
+              totalAvailable < 10 ? styles.seatsWarning : null,
             ]}
           >
             {totalAvailable} de {totalSeats} asientos disponibles
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.tripFooter}>
-        <Text style={styles.priceText}>{formatCurrency(trip.pricing.normalSeat.basePrice)}</Text>
-        <TouchableOpacity 
-          style={styles.selectButton}
+        <Text style={styles.priceText}>
+          {formatCurrency(trip.pricing.normalSeat.basePrice)}
+        </Text>
+        <TouchableOpacity
+          style={[styles.selectButton, !isSelectable && styles.selectButtonDisabled]}
           onPress={handleSelectTrip}
+          disabled={!isSelectable}
         >
-          <Text style={styles.selectButtonText}>Seleccionar</Text>
+          <Text style={[styles.selectButtonText, !isSelectable && styles.selectButtonTextDisabled]}>
+            {isSelectable ? 'Seleccionar' : 'No disponible'}
+          </Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -118,25 +146,29 @@ export default function TripCard({ trip }: TripCardProps) {
 
 const styles = StyleSheet.create({
   tripItem: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
+  tripItemDisabled: {
+    opacity: 0.6,
+    backgroundColor: "#f8f8f8",
+  },
   tripHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   companyContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   companyLogo: {
     width: 30,
@@ -146,7 +178,7 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.textPrimary,
   },
   busInfo: {
@@ -154,50 +186,33 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 2,
   },
-  busTypeContainer: {
-    backgroundColor: Colors.primary + '20',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  busTypeText: {
-    fontSize: 12,
-    color: Colors.primary,
-    fontWeight: '500',
-  },
-  capacityText: {
-    fontSize: 10,
-    color: Colors.primary,
-    marginTop: 2,
-  },
   tripDetails: {
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   timeText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.textPrimary,
   },
   durationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
     marginHorizontal: 10,
   },
   durationLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: "#e0e0e0",
   },
   durationText: {
     fontSize: 12,
@@ -205,8 +220,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   routeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   cityText: {
@@ -214,19 +229,19 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   stopsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 8,
   },
   stopsText: {
     fontSize: 12,
     color: Colors.textSecondary,
     marginLeft: 6,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   seatsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   seatsText: {
     fontSize: 14,
@@ -235,16 +250,16 @@ const styles = StyleSheet.create({
   },
   seatsWarning: {
     color: Colors.warning,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   tripFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   priceText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.primary,
   },
   selectButton: {
@@ -253,8 +268,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 6,
   },
+  selectButtonDisabled: {
+    backgroundColor: "#ccc",
+  },
   selectButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  selectButtonTextDisabled: {
+    color: "#888",
   },
 });
