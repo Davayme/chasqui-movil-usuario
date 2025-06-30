@@ -75,7 +75,7 @@ export interface Pricing {
 }
 
 export interface TripSearchResult {
-  routeSheetDetailId: number;
+  routeSheetDetailId: number | null;
   date: string;
   frequency: Frequency;
   bus: Bus;
@@ -203,6 +203,13 @@ export const searchAvailableTrips = async (
     const data: TripSearchResult[] = await response.json();
     
     console.log('Datos recibidos del backend:', data);
+    
+    // Verificar si hay viajes con routeSheetDetailId null
+    const tripsWithNullId = data.filter(trip => trip.routeSheetDetailId === null);
+    if (tripsWithNullId.length > 0) {
+      console.warn(`⚠️ Se encontraron ${tripsWithNullId.length} viajes con routeSheetDetailId null. Estos no se podrán seleccionar.`);
+    }
+    
     return data;
 
   } catch (error) {

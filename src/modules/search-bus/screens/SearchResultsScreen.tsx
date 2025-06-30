@@ -165,7 +165,9 @@ export default function SearchResultsScreen() {
         <FlatList
           data={filteredTrips}
           renderItem={({ item }) => <TripCard trip={item} />}
-          keyExtractor={(item) => item.routeSheetDetailId.toString()}
+          keyExtractor={(item, index) => 
+            item.routeSheetDetailId ? item.routeSheetDetailId.toString() : `trip-${index}`
+          }
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />
