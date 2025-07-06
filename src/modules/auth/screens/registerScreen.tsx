@@ -19,7 +19,7 @@ export default function RegisterScreen() {
   // Form state
   const [formData, setFormData] = useState({
     idNumber: '',
-    documentType: 'cedula',
+    documentType: 'CEDULA', // Cambiar de 'cedula' a 'CEDULA'
     firstName: '',
     lastName: '',
     email: '',
@@ -67,9 +67,9 @@ export default function RegisterScreen() {
       case 'idNumber':
         if (!value) {
           newErrors.idNumber = 'El número de documento es requerido';
-        } else if (formData.documentType === 'cedula' && !/^\d{10}$/.test(value)) {
+        } else if (formData.documentType === 'CEDULA' && !/^\d{10}$/.test(value)) {
           newErrors.idNumber = 'La cédula debe tener 10 dígitos';
-        } else if (formData.documentType === 'ruc' && !/^\d{13}$/.test(value)) {
+        } else if (formData.documentType === 'RUC' && !/^\d{13}$/.test(value)) {
           newErrors.idNumber = 'El RUC debe tener 13 dígitos';
         } else {
           delete newErrors.idNumber;
@@ -244,6 +244,30 @@ export default function RegisterScreen() {
       documentType: type,
     });
     setShowDocumentTypeDropdown(false);
+    
+    // Re-validar el campo idNumber si ya fue tocado
+    if (touched.idNumber) {
+      validateFieldWithNewDocumentType('idNumber', formData.idNumber, type);
+    }
+  };
+
+  // Función auxiliar para validar con el nuevo tipo de documento
+  const validateFieldWithNewDocumentType = (field: string, value: string, newDocumentType: string) => {
+    let newErrors = { ...errors };
+    
+    if (field === 'idNumber') {
+      if (!value) {
+        newErrors.idNumber = 'El número de documento es requerido';
+      } else if (newDocumentType === 'CEDULA' && !/^\d{10}$/.test(value)) {
+        newErrors.idNumber = 'La cédula debe tener 10 dígitos';
+      } else if (newDocumentType === 'RUC' && !/^\d{13}$/.test(value)) {
+        newErrors.idNumber = 'El RUC debe tener 13 dígitos';
+      } else {
+        delete newErrors.idNumber;
+      }
+    }
+    
+    setErrors(newErrors);
   };
 
   return (
@@ -308,10 +332,10 @@ export default function RegisterScreen() {
             
             {/* ID Number */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Número de {formData.documentType === 'cedula' ? 'cédula' : 'RUC'}</Text>
+              <Text style={styles.label}>Número de {formData.documentType === 'CEDULA' ? 'cédula' : 'RUC'}</Text>
               <TextInput
                 style={[styles.input, errors.idNumber ? styles.inputError : null]}
-                placeholder={`Ingrese su número de ${formData.documentType === 'cedula' ? 'cédula' : 'RUC'}`}
+                placeholder={`Ingrese su número de ${formData.documentType === 'CEDULA' ? 'cédula' : 'RUC'}`}
                 value={formData.idNumber}
                 onChangeText={(text) => handleChange('idNumber', text)}
                 onBlur={() => handleBlur('idNumber')}
